@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Jail settings</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Jail</h1>
+      <p>
+        Break a browsing rule and your tabs go to jail until Messages accepts
+        your group alert.
+      </p>
+      <p
+        id="incognito-warning"
+        class="warning"
+        role="alert"
+        aria-live="polite"
+        hidden
+      ></p>
+      <section class="warning" aria-labelledby="helper-heading">
+        <h2 id="helper-heading">Mac helper required</h2>
+        <p>
+          Jail requires a small Mac helper. It stays installed and is used only
+          for the texting workflow: sending your alerts and importing contacts
+          you choose. Jail cannot install software itself.
+        </p>
+        <p>
+          All chosen contacts will share one group chat. Each gets a message in
+          that group: “Hi &lt;first name&gt;, I miss you”. Messages may reuse a
+          group with exactly the same people.
+        </p>
+        <p>
+          Declining installation or a permission prompt after a violation keeps
+          browsing locked.
+          <a href="install.html">Install helper and review permissions</a>.
+        </p>
+      </section>
+      <form id="settings-form">
+        <div>
+          <label for="allowList"
+            >Allow list
+            <span>Leave empty to allow every site not blocked.</span>
+          </label>
+          <div class="allow-list-input">
+            <input
+              id="allowList"
+              type="text"
+              placeholder="example.com"
+              aria-describedby="allow-list-error"
+            />
+            <button type="button" id="add-domain">Add</button>
+          </div>
+          <p id="allow-list-error" role="alert"></p>
+          <ul id="allow-list-domains"></ul>
+        </div>
+        <label
+          >Block list
+          <span>One domain per line. The block list always wins.</span
+          ><textarea
+            id="blockList"
+            rows="6"
+            placeholder="distracting.example"
+          ></textarea>
+        </label>
+        <fieldset>
+          <legend>Contacts</legend>
+          <p>
+            Phone numbers must use E.164 format, such as +14155552671. Changes
+            are saved with settings.
+          </p>
+          <div id="contact-drop">
+            <label
+              >Drop contact cards here, or choose .vcf files<input
+                id="contact-files"
+                type="file"
+                accept=".vcf"
+                multiple
+            /></label>
+          </div>
+          <p>
+            Mac Contacts access is optional and requested only when you click
+            below. Allow Jail Helper in System Settings → Privacy &amp; Security
+            → Contacts.
+          </p>
+          <button type="button" id="load-mac-contacts">
+            Pick from Mac Contacts
+          </button>
+          <label
+            >Search Mac contacts<input id="contact-search" type="search"
+          /></label>
+          <div id="mac-picker" aria-live="polite"></div>
+          <div id="contacts"></div>
+          <button type="button" id="add-contact">Add contact</button>
+          <label
+            >Paste CSV
+            <span>Use name,phone columns, one contact per line.</span>
+            <textarea
+              id="contacts-csv"
+              rows="3"
+              placeholder="name,phone"
+            ></textarea>
+          </label>
+          <button type="button" id="import-contacts">Add from CSV</button>
+          <p id="contacts-error" role="alert"></p>
+        </fieldset>
+        <label
+          >Personalized message template
+          <span
+            >Use {name} for the first name. Each message is sent into the same
+            group containing all chosen contacts.</span
+          >
+          <textarea id="contactMessageTemplate" rows="3"></textarea>
+        </label>
+        <section aria-labelledby="preview-heading">
+          <h2 id="preview-heading">Message previews</h2>
+          <div id="contact-previews"></div>
+        </section>
+        <label
+          >Check every (minutes)<input
+            id="checkEveryMinutes"
+            type="number"
+            min="0.5"
+            step="0.5"
+        /></label>
+        <div class="actions">
+          <button type="submit">Save settings</button>
+        </div>
+        <p id="status" role="status" aria-live="polite"></p>
+        <p id="send-status" role="status" aria-live="polite"></p>
+      </form>
+    </main>
+    <script type="module" src="options.js"></script>
+  </body>
+</html>
