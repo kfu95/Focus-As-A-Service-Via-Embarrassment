@@ -43,7 +43,7 @@ Declining helper installation does not dismiss a pending alert. Closing the jail
 
 If the helper crashes or times out between Messages accepting a send and saving the receipt, retrying may duplicate that last message. A failed first-group verification may also have sent its first message; inspect Messages before retrying. No automatic individual-text fallback occurs. Group verification intentionally fails when Messages exposes a recipient as an email alias rather than the selected phone number.
 
-After success, Jail pages show that browsing is unlocked. Open an allowed site to continue; old violating URLs are not restored. Another violation starts another alert. The Mac helper stays installed.
+After success, Jail pages show that browsing is unlocked. A default 24-hour grace period begins, pausing browsing rules so you can use the web. The grace period can be overridden and ended early from the Jail page or settings to re-arm immediately, and its duration can be adjusted in settings. Another violation after the grace period starts another alert. The Mac helper stays installed.
 
 ## Local files and uninstall
 

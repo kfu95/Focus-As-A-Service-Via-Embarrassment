@@ -10,6 +10,7 @@ import {
   DEFAULT_SETTINGS,
   getSettings,
   normalizeCheckEveryMinutes,
+  normalizeGracePeriodHours,
   saveSettings,
   validateDomain,
 } from './settings.js';
@@ -27,6 +28,9 @@ const contactsError = document.querySelector('#contacts-error');
 const domainInput = document.querySelector('#allowList');
 const domainsElement = document.querySelector('#allow-list-domains');
 const domainError = document.querySelector('#allow-list-error');
+const graceNotice = document.querySelector('#grace-period-notice');
+const graceStatus = document.querySelector('#grace-status');
+const endGraceButton = document.querySelector('#end-grace-period');
 let domains = [];
 let contacts = [];
 const INCOGNITO_WARNING =
@@ -59,6 +63,22 @@ async function load() {
   const incognitoAllowed = await chrome.extension.isAllowedIncognitoAccess();
   incognitoWarning.hidden = incognitoAllowed;
   incognitoWarning.textContent = incognitoAllowed ? '' : INCOGNITO_WARNING;
+  await renderGracePeriod();
+}
+
+async function renderGracePeriod() {
+  if (!graceNotice) return;
+  const { gracePeriodUntil } =
+    await chrome.storage.local.get('gracePeriodUntil');
+  const inGrace = Boolean(gracePeriodUntil && Date.now() < gracePeriodUntil);
+  graceNotice.hidden = !inGrace;
+  if (inGrace && graceStatus) {
+    const timeStr = new Date(gracePeriodUntil).toLocaleTimeString([], {
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+    graceStatus.textContent = `Browsing rules are paused until ${timeStr}. You can end the grace period to resume enforcement immediately.`;
+  }
 }
 
 function values() {
@@ -76,6 +96,9 @@ function validatedValues() {
   settings.contacts = contacts.map(validateContact);
   settings.checkEveryMinutes = normalizeCheckEveryMinutes(
     settings.checkEveryMinutes,
+  );
+  settings.gracePeriodHours = normalizeGracePeriodHours(
+    settings.gracePeriodHours,
   );
   return settings;
 }
@@ -210,10 +233,27 @@ form.addEventListener('submit', async (event) => {
 });
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
-  if (areaName !== 'local' || !changes.lastSendError) return;
-  const message = changes.lastSendError.newValue;
-  showSendStatus(message || '', message ? 'error' : '');
+  if (areaName !== 'local') return;
+  if (changes.lastSendError) {
+    const message = changes.lastSendError.newValue;
+    showSendStatus(message || '', message ? 'error' : '');
+  }
+  if (changes.gracePeriodUntil) {
+    renderGracePeriod().catch(console.error);
+  }
 });
+
+if (endGraceButton) {
+  endGraceButton.addEventListener('click', async () => {
+    endGraceButton.disabled = true;
+    try {
+      await chrome.runtime.sendMessage({ type: 'end-grace-period' });
+    } finally {
+      endGraceButton.disabled = false;
+      await renderGracePeriod();
+    }
+  });
+}
 
 setupContactImport(
   (imported) => {

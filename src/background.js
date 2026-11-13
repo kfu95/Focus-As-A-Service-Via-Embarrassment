@@ -1,5 +1,9 @@
 import { getTabViolation, parseDomainList } from './matcher.js';
-import { getSettings, normalizeCheckEveryMinutes } from './settings.js';
+import {
+  getSettings,
+  normalizeCheckEveryMinutes,
+  normalizeGracePeriodHours,
+} from './settings.js';
 import { getAlertRecipients } from './contacts.js';
 import { helperRequest, validateNativeRequest, verifySend } from './native.js';
 
@@ -29,9 +33,13 @@ async function sendAlert(episode) {
   try {
     const response = await helperRequest({ type: 'send-group', episode });
     verifySend(response, episode);
+    const { gracePeriodHours } = await getSettings();
+    const hours = normalizeGracePeriodHours(gracePeriodHours ?? 24);
+    const gracePeriodUntil = hours > 0 ? Date.now() + hours * 3600 * 1000 : 0;
     await chrome.storage.local.set({
       lockdown: null,
       lastSendError: '',
+      gracePeriodUntil,
     });
   } catch (error) {
     await chrome.storage.local.set({ lastSendError: error.message });
@@ -61,6 +69,13 @@ function createEpisode(id, settings) {
 }
 
 async function evaluateOpenTabs() {
+  const { lockdown, gracePeriodUntil } = await chrome.storage.local.get([
+    'lockdown',
+    'gracePeriodUntil',
+  ]);
+  if (gracePeriodUntil && Date.now() < gracePeriodUntil) {
+    return;
+  }
   const settings = await getSettings();
   const allowList = parseDomainList(settings.allowList);
   const blockList = parseDomainList(settings.blockList);
@@ -69,7 +84,6 @@ async function evaluateOpenTabs() {
     getTabViolation(tab.pendingUrl || tab.url, allowList, blockList),
   );
 
-  const { lockdown } = await chrome.storage.local.get('lockdown');
   if (violatingTabs.length > 0) {
     await confineViolatingTabs(violatingTabs);
   }
@@ -128,6 +142,10 @@ async function handleMessage(message) {
       return helperRequest({ type: 'contacts' });
     case 'retry-alert':
       return retryAlert();
+    case 'end-grace-period':
+      await chrome.storage.local.set({ gracePeriodUntil: 0 });
+      await evaluateOpenTabs();
+      return { ok: true };
     default:
       throw new Error('Unknown Jail request.');
   }

@@ -35,6 +35,7 @@ function createOptionsEnvironment(overrides = {}) {
       { name: 'Grace', phone: '+14155552672' },
     ],
     message: 'Browsing rule violated',
+    gracePeriodHours: 24,
     ...overrides,
   };
   const elements = {
@@ -56,6 +57,10 @@ function createOptionsEnvironment(overrides = {}) {
     '#import-contacts': createElement(),
     '#blockList': createElement(),
     '#checkEveryMinutes': createElement(),
+    '#gracePeriodHours': createElement(),
+    '#grace-period-notice': createElement(),
+    '#grace-status': createElement(),
+    '#end-grace-period': createElement(),
     '#incognito-warning': createElement(),
     '#message': createElement(),
     '#send-status': createElement(),

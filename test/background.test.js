@@ -179,10 +179,15 @@ describe('persistent Messages lockdown', () => {
     await checkOpenTabs();
     await flush();
     expect(env.stored.lockdown).toBeNull();
+    expect(env.stored.gracePeriodUntil).toBeGreaterThan(Date.now());
     await checkOpenTabs();
     expect(env.chrome.runtime.sendNativeMessage).toHaveBeenCalledOnce();
     env.setTabs([{ id: 3, url: 'https://blocked.example' }]);
     await env.listeners.created();
+    await flush();
+    expect(env.chrome.runtime.sendNativeMessage).toHaveBeenCalledOnce();
+    expect(await env.message('end-grace-period')).toEqual({ ok: true });
+    expect(env.stored.gracePeriodUntil).toBe(0);
     await flush();
     expect(env.chrome.runtime.sendNativeMessage).toHaveBeenCalledTimes(2);
   });

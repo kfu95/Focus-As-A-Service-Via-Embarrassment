@@ -7,7 +7,18 @@ export const DEFAULT_SETTINGS = {
   blockList: '',
   message: 'A browsing rule was violated.',
   checkEveryMinutes: 1,
+  gracePeriodHours: 24,
 };
+
+export function normalizeGracePeriodHours(value) {
+  if (typeof value === 'string' && !value.trim()) {
+    throw new Error('Grace period must be a non-negative number of hours.');
+  }
+  const hours = Number(value);
+  if (!Number.isFinite(hours) || hours < 0)
+    throw new Error('Grace period must be a non-negative number of hours.');
+  return Math.min(168, Math.max(0, hours));
+}
 
 export function normalizeCheckEveryMinutes(value) {
   const minutes = Number(value);
