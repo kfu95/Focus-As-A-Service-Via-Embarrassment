@@ -123,7 +123,7 @@ function renderActiveSummary() {
   });
 
   const contactsHeading = document.createElement('h3');
-  contactsHeading.textContent = `Emergency contacts (${contacts.length})`;
+  contactsHeading.textContent = `People that will be texted (${contacts.length})`;
   const contactsUl = document.createElement('ul');
   contacts.forEach((c) => {
     const li = document.createElement('li');

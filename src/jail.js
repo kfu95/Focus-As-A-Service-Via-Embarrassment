@@ -62,7 +62,7 @@ async function render() {
       sendingPopupShown = true;
       showPopup(
         'Alert sending',
-        'A browsing rule was broken. Your emergency group alert is sending in the background.',
+        'A browsing rule was broken. Your group alert is sending in the background.',
       );
     }
   } else {

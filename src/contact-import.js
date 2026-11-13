@@ -36,7 +36,7 @@ export function setupContactImport(addContacts, showError) {
         render();
         showError(
           available.length
-            ? 'Choose contacts below. Add a country code if a number needs correction.'
+            ? ''
             : 'No named contacts with phone numbers found.',
         );
       } catch (error) {
