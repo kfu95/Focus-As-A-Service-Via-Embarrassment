@@ -13,13 +13,6 @@
         Break a browsing rule and your tabs go to jail until Messages accepts
         your group alert.
       </p>
-      <p
-        id="incognito-warning"
-        class="warning"
-        role="alert"
-        aria-live="polite"
-        hidden
-      ></p>
       <section
         id="grace-period-notice"
         class="warning"
@@ -103,6 +96,13 @@
         <!-- Step 1: Install Mac Helper & Review Permissions -->
         <section class="wizard-step" id="step-helper" data-step="1">
           <h2>Step 1: Install Mac helper</h2>
+          <p
+            id="incognito-warning"
+            class="warning"
+            role="alert"
+            aria-live="polite"
+            hidden
+          ></p>
           <p>
             Jail requires a small Mac helper for the texting workflow. It automates
             group messages and securely looks up contacts when requested.
@@ -201,7 +201,7 @@
 
         <!-- Step 4: Contacts -->
         <section class="wizard-step" id="step-contacts" data-step="4" hidden>
-          <h2>Step 4: Emergency contacts</h2>
+          <h2>Step 4: People that will be texted</h2>
           <fieldset>
             <legend>Contacts</legend>
             <p>
@@ -303,7 +303,7 @@
             Settings have been saved. Next, Jail will send out a text to your own
             number to allow permissions to go through from now on. This triggers
             macOS Messages and Shortcuts permission prompt once, so future
-            emergency alerts send automatically without interruptions.
+            alerts send automatically without interruptions.
           </p>
           <label for="self-phone"
             >Your phone number
@@ -338,8 +338,8 @@
             <h2>Jail is active and monitoring</h2>
             <p>
               Your rules are active. If you visit any site on your block list,
-              your violating tabs will be redirected to Jail and your emergency
-              contacts will receive a group text.
+              your violating tabs will be redirected to Jail and a group text
+              will be sent to the people you chose.
             </p>
           </div>
           <div id="active-summary"></div>
