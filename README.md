@@ -4,6 +4,8 @@ Jail is a macOS Chrome extension that redirects open and new web tabs to a jail 
 
 The default is one message per contact: `Hi Ada, I miss you`, then `Hi Grace, I miss you`, both in the same group. Only first names appear in `{name}`. Messages may reuse an existing group with exactly those members. Jail never deliberately falls back to individual texts for an alert. A failed or unverifiable group send keeps Jail locked.
 
+![iMessage group text alert example](docs/images/group-text.png)
+
 ## Install and configure
 
 1. Download this repository. Install dependencies with `npm ci`. Run `npm test`, `npm run lint`, and `npm run format:check` on macOS with Apple Command Line Tools installed.
