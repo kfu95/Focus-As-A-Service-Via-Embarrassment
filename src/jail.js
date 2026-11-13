@@ -2,6 +2,40 @@ const retry = document.querySelector('#retry');
 const graceBanner = document.querySelector('#grace-period-banner');
 const graceText = document.querySelector('#grace-period-text');
 const endGraceButton = document.querySelector('#end-grace-period');
+const bottomText = document.querySelector('#bottom-helper-text');
+const popup = document.querySelector('#alert-popup');
+const popupTitle = document.querySelector('#popup-title');
+const popupBody = document.querySelector('#popup-body');
+const popupOkBtn = document.querySelector('#popup-ok-btn');
+
+let previousLockdown = undefined;
+let sendingPopupShown = false;
+let sentPopupShown = false;
+
+function showPopup(title, body) {
+  if (!popup) return;
+  if (popupTitle) popupTitle.textContent = title;
+  if (popupBody) popupBody.textContent = body;
+  try {
+    if (!popup.open && popup.showModal) {
+      popup.showModal();
+    } else {
+      popup.setAttribute('open', '');
+    }
+  } catch {
+    popup.setAttribute('open', '');
+  }
+}
+
+if (popupOkBtn && popup) {
+  popupOkBtn.addEventListener('click', () => {
+    try {
+      popup.close();
+    } catch {
+      popup.removeAttribute('open');
+    }
+  });
+}
 
 async function render() {
   const { lockdown, lastSendError, gracePeriodUntil } =
@@ -12,20 +46,43 @@ async function render() {
     });
   const inGrace =
     !lockdown && gracePeriodUntil && Date.now() < gracePeriodUntil;
-  document.querySelector('#heading').textContent = lockdown
-    ? 'Your browsing is locked.'
-    : inGrace
-      ? 'Grace period active.'
-      : 'Your alert was sent.';
-  document.querySelector('#explanation').textContent = lockdown
-    ? 'A tab broke your rules. Violating tabs stay here until Messages accepts all your group messages.'
-    : inGrace
+
+  if (lockdown) {
+    document.querySelector('#heading').textContent =
+      'Your browsing is locked.';
+    document.querySelector('#explanation').textContent =
+      'A tab broke your rules. Violating tabs stay here until Messages accepts all your group messages.';
+    document.querySelector('#delivery').textContent =
+      lastSendError ||
+      'Sending the alert in the background. Allow the requested Mac permissions.';
+    retry.hidden = false;
+    if (bottomText) bottomText.hidden = false;
+
+    if (!sendingPopupShown) {
+      sendingPopupShown = true;
+      showPopup(
+        'Alert sending',
+        'A browsing rule was broken. Your emergency group alert is sending in the background.',
+      );
+    }
+  } else {
+    const consoling = "So you messed up, and it's been sent. Good luck.";
+    document.querySelector('#heading').textContent = consoling;
+    document.querySelector('#explanation').textContent = inGrace
       ? `Browsing rules are paused until ${new Date(gracePeriodUntil).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}.`
-      : 'Jail is unlocked. Open an allowed site to continue. The helper stays installed for next time.';
-  document.querySelector('#delivery').textContent = lockdown
-    ? lastSendError || 'Sending the alert. Allow the requested Mac permissions.'
-    : 'All messages accepted by Messages. This does not confirm delivery to each phone.';
-  retry.hidden = !lockdown;
+      : 'Browsing is unlocked. The damage has been done.';
+    document.querySelector('#delivery').textContent = '';
+    retry.hidden = true;
+    if (bottomText) bottomText.hidden = true;
+
+    if (!sentPopupShown && (previousLockdown !== undefined || inGrace)) {
+      sentPopupShown = true;
+      showPopup('Alert sent', consoling);
+    }
+  }
+
+  previousLockdown = lockdown;
+
   if (graceBanner) {
     graceBanner.hidden = !inGrace;
     if (inGrace && graceText) {
@@ -46,6 +103,7 @@ if (endGraceButton) {
     }
   });
 }
+
 retry.addEventListener('click', async () => {
   retry.disabled = true;
   document.querySelector('#result').textContent = 'Retrying…';
@@ -65,10 +123,12 @@ retry.addEventListener('click', async () => {
     await render();
   }
 });
+
 chrome.storage.onChanged.addListener(() => render().catch(console.error));
 render().catch((error) => {
   document.querySelector('#result').textContent = error.message;
 });
+
 chrome.runtime
   .sendMessage({ type: 'helper-status' })
   .then((response) => {
