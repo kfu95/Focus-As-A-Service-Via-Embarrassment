@@ -19,14 +19,7 @@ const status = document.querySelector('#status');
 const sendStatus = document.querySelector('#send-status');
 const incognitoWarning = document.querySelector('#incognito-warning');
 const fields = Object.keys(DEFAULT_SETTINGS).filter(
-  (field) =>
-    ![
-      'contacts',
-      'allowList',
-      'telegramBotToken',
-      'telegramChatId',
-      'message',
-    ].includes(field),
+  (field) => !['contacts', 'allowList', 'message'].includes(field),
 );
 const contactsElement = document.querySelector('#contacts');
 const previews = document.querySelector('#contact-previews');

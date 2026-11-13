@@ -5,8 +5,6 @@ export const DEFAULT_SETTINGS = {
   contacts: [],
   contactMessageTemplate: 'Hi {name}, I miss you',
   blockList: '',
-  telegramBotToken: '',
-  telegramChatId: '',
   message: 'A browsing rule was violated.',
   checkEveryMinutes: 1,
 };

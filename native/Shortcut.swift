@@ -32,7 +32,7 @@ struct Shortcut {
       "WFWorkflowTypes": [],
       "WFWorkflowInputContentItemClasses": ["WFStringContentItem", "WFGenericFileContentItem"],
       "WFWorkflowActions": [
-        action("getdictionaryfrominput", ["WFInput": input, "UUID": dictionary]),
+        action("detect.dictionary", ["WFInput": input, "UUID": dictionary]),
         action(
           "getvalueforkey",
           [
@@ -49,7 +49,9 @@ struct Shortcut {
           "sendmessage",
           [
             "WFSendMessageActionRecipients": output(recipients, "Dictionary Value"),
-            "WFSendMessageContent": output(message, "Dictionary Value"), "ShowWhenRun": false,
+            "WFSendMessageContent": output(message, "Dictionary Value"),
+            "WFSendMessageShowComposeSheet": false,
+            "ShowWhenRun": false,
             "IntentAppIdentifier": "com.apple.MobileSMS",
           ]),
       ],
