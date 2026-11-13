@@ -8,7 +8,7 @@ async function render() {
     ? 'Your browsing is locked.'
     : 'Your alert was sent.';
   document.querySelector('#explanation').textContent = lockdown
-    ? 'A tab broke your rules. Every web tab stays here until Messages accepts all your group messages.'
+    ? 'A tab broke your rules. Violating tabs stay here until Messages accepts all your group messages.'
     : 'Jail is unlocked. Open an allowed site to continue. The helper stays installed for next time.';
   document.querySelector('#delivery').textContent = lockdown
     ? lastSendError || 'Sending the alert. Allow the requested Mac permissions.'

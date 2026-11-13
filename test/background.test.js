@@ -125,13 +125,16 @@ beforeEach(() => vi.resetModules());
 afterEach(() => vi.unstubAllGlobals());
 
 describe('persistent Messages lockdown', () => {
-  it('confines every web tab before sending, and renders first names', async () => {
+  it('confines violating tabs before sending, and renders first names', async () => {
     const env = environment();
     const { checkOpenTabs } = await load(env);
     env.chrome.runtime.sendNativeMessage.mockImplementation(
       async (_host, request) => {
         expect(env.stored.lockdown.id).toBe(request.episode.id);
-        expect(env.chrome.tabs.update).toHaveBeenCalledTimes(2);
+        expect(env.chrome.tabs.update).toHaveBeenCalledTimes(1);
+        expect(env.chrome.tabs.update).toHaveBeenCalledWith(1, {
+          url: 'chrome-extension://test/src/jail.html',
+        });
         expect(request.episode.recipients.map((c) => c.message)).toEqual([
           'Hi Ada, I miss you',
           'Hi Grace, I miss you',
@@ -145,7 +148,7 @@ describe('persistent Messages lockdown', () => {
     expect(env.stored.lastSendError).toContain('Helper missing');
     expect(fetch).not.toHaveBeenCalled();
   });
-  it('keeps new tabs locked while the send waits', async () => {
+  it('keeps new violating tabs locked while the send waits, and preserves allowed tabs', async () => {
     const env = environment();
     let finish;
     env.chrome.runtime.sendNativeMessage.mockImplementation(
@@ -157,9 +160,13 @@ describe('persistent Messages lockdown', () => {
     const { checkOpenTabs } = await load(env);
     await checkOpenTabs();
     await flush();
+    env.chrome.tabs.update.mockClear();
     env.setTabs([{ id: 3, url: 'https://allowed.example' }]);
     await env.listeners.created();
-    expect(env.chrome.tabs.update).toHaveBeenCalledWith(3, {
+    expect(env.chrome.tabs.update).not.toHaveBeenCalled();
+    env.setTabs([{ id: 4, url: 'https://blocked.example' }]);
+    await env.listeners.created();
+    expect(env.chrome.tabs.update).toHaveBeenCalledWith(4, {
       url: 'chrome-extension://test/src/jail.html',
     });
     finish({ version: 1, ok: false, error: 'Denied' });
@@ -218,9 +225,11 @@ describe('persistent Messages lockdown', () => {
     await flush();
     env.stored.contacts = [];
     env.stored.allowList = '';
+    env.stored.blockList = 'blocked.example';
     vi.resetModules();
     const second = await load(env);
-    env.setTabs([{ id: 4, url: 'https://any.example' }]);
+    env.chrome.tabs.update.mockClear();
+    env.setTabs([{ id: 4, url: 'https://blocked.example' }]);
     await second.checkOpenTabs();
     expect(env.chrome.tabs.update).toHaveBeenCalledWith(4, {
       url: 'chrome-extension://test/src/jail.html',

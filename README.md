@@ -37,7 +37,7 @@ The first message in a new group is sent through the bundled Shortcuts **Send Me
 
 ## Lockdown and retry
 
-Lockdown and its original recipients/messages are saved before any send starts. Existing and newly opened HTTP/HTTPS tabs, including allowed sites, and Chrome's new-tab page are redirected. Extension setup pages remain accessible so the helper can be installed or repaired. Other internal Chrome pages and other applications are outside the extension's control. Disabling or removing the extension bypasses its enforcement; this is a browsing deterrent, not an OS security boundary.
+Lockdown and its original recipients/messages are saved before any send starts. Tabs violating browsing rules are redirected to the jail page. Allowed tabs and productive sessions remain untouched. Extension setup pages remain accessible so the helper can be installed or repaired. Other internal Chrome pages and other applications are outside the extension's control. Disabling or removing the extension bypasses its enforcement; this is a browsing deterrent, not an OS security boundary.
 
 Declining helper installation does not dismiss a pending alert. Closing the jail tab, restarting Chrome, editing rules, or changing contacts does not clear it. Install or repair the helper, resolve the displayed permission or Messages error, and click **Retry group alert**. Completed messages are recorded locally, so normal retries resume the remaining messages in the same chat. If the group membership changed, restore its original members before retrying.
 
@@ -68,6 +68,6 @@ Then delete **Jail Group Start** in Shortcuts. Uninstalling never clears a pendi
 
 Plain JavaScript MV3, no bundler. `npm run format` uses Prettier; `npm run lint` uses ESLint. `npm test` runs Vitest and `native/test.sh`, which compiles Swift, tests group orchestration using a fake Messages boundary, compiles the JXA script without executing it, and checks the generated shortcut plist and shell syntax. No test invokes a real Messages send, Contacts request, or installer.
 
-Tests cover missing helpers, all-tab confinement while a send waits, worker restart, frozen recipients, exact group membership, partial retries, repeated alert IDs, first-name rendering, and vCards. Manual group delivery and macOS permission prompts remain device checks; passing mocks is not proof of live Messages delivery. This repository has no CI.
+Tests cover missing helpers, violating-tab confinement while a send waits, worker restart, frozen recipients, exact group membership, partial retries, repeated alert IDs, first-name rendering, and vCards. Manual group delivery and macOS permission prompts remain device checks; passing mocks is not proof of live Messages delivery. This repository has no CI.
 
 There are no donation or payment features.

@@ -15,16 +15,9 @@ async function configureAlarm() {
   });
 }
 
-async function confineTabs() {
-  const tabs = await chrome.tabs.query({});
+async function confineViolatingTabs(tabs) {
   const results = await Promise.allSettled(
-    tabs
-      .filter(
-        (tab) =>
-          /^https?:/i.test(tab.pendingUrl || tab.url || '') ||
-          tab.url === 'chrome://newtab/',
-      )
-      .map((tab) => chrome.tabs.update(tab.id, { url: jailURL })),
+    tabs.map((tab) => chrome.tabs.update(tab.id, { url: jailURL })),
   );
   for (const result of results) {
     if (result.status === 'rejected')
@@ -68,23 +61,21 @@ function createEpisode(id, settings) {
 }
 
 async function evaluateOpenTabs() {
+  const settings = await getSettings();
+  const allowList = parseDomainList(settings.allowList);
+  const blockList = parseDomainList(settings.blockList);
+  const tabs = await chrome.tabs.query({});
+  const violatingTabs = tabs.filter((tab) =>
+    getTabViolation(tab.pendingUrl || tab.url, allowList, blockList),
+  );
+
   const { lockdown } = await chrome.storage.local.get('lockdown');
-  if (lockdown) {
-    await confineTabs();
+  if (violatingTabs.length > 0) {
+    await confineViolatingTabs(violatingTabs);
+  }
+  if (lockdown || violatingTabs.length === 0) {
     return;
   }
-  const settings = await getSettings();
-  const tabs = await chrome.tabs.query({});
-  if (
-    !tabs.some((tab) =>
-      getTabViolation(
-        tab.pendingUrl || tab.url,
-        parseDomainList(settings.allowList),
-        parseDomainList(settings.blockList),
-      ),
-    )
-  )
-    return;
   const id = crypto.randomUUID();
   let episode;
   try {
@@ -96,7 +87,6 @@ async function evaluateOpenTabs() {
     lockdown: episode,
     lastSendError: episode.setupError,
   });
-  await confineTabs();
   if (!episode.setupError) startSend(episode).catch(console.error);
 }
 
@@ -125,7 +115,7 @@ async function retryAlert() {
     lockdown = createEpisode(lockdown.id, settings);
     await chrome.storage.local.set({ lockdown });
   }
-  await confineTabs();
+  await evaluateOpenTabs();
   await startSend(lockdown);
   return { ok: true };
 }
