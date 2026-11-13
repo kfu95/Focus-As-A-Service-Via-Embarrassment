@@ -20,7 +20,7 @@ async function render() {
   document.querySelector('#explanation').textContent = lockdown
     ? 'A tab broke your rules. Violating tabs stay here until Messages accepts all your group messages.'
     : inGrace
-      ? `Browsing rules are paused until ${new Date(gracePeriodUntil).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.`
+      ? `Browsing rules are paused until ${new Date(gracePeriodUntil).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}.`
       : 'Jail is unlocked. Open an allowed site to continue. The helper stays installed for next time.';
   document.querySelector('#delivery').textContent = lockdown
     ? lastSendError || 'Sending the alert. Allow the requested Mac permissions.'

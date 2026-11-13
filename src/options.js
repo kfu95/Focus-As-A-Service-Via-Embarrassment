@@ -73,7 +73,9 @@ async function renderGracePeriod() {
   const inGrace = Boolean(gracePeriodUntil && Date.now() < gracePeriodUntil);
   graceNotice.hidden = !inGrace;
   if (inGrace && graceStatus) {
-    const timeStr = new Date(gracePeriodUntil).toLocaleTimeString([], {
+    const timeStr = new Date(gracePeriodUntil).toLocaleString([], {
+      month: 'short',
+      day: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
     });
