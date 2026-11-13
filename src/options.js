@@ -45,6 +45,9 @@ const helperCommandPre = document.querySelector('#helper-install-command');
 const copyInstallBtn = document.querySelector('#copy-install-cmd');
 const checkHelperBtn = document.querySelector('#check-helper-btn');
 const helperInstallStatus = document.querySelector('#helper-install-status');
+const permissionRecoveryBox = document.querySelector(
+  '#permission-recovery-box',
+);
 
 let domains = [];
 let blockedDomains = [];
@@ -582,6 +585,8 @@ if (sendTestButton) {
           'Text sent successfully! macOS permissions are granted.';
         selfTestStatus.className = 'success';
       }
+      if (permissionRecoveryBox) permissionRecoveryBox.hidden = true;
+      sendTestButton.textContent = 'Send text to yourself';
       await chrome.storage.local.set({
         selfPhone: phone,
         selfTestCompleted: true,
@@ -592,9 +597,11 @@ if (sendTestButton) {
       setTimeout(() => setStep(7), 1200);
     } catch (error) {
       if (selfTestStatus) {
-        selfTestStatus.textContent = `Could not send test text: ${error.message}`;
+        selfTestStatus.textContent = error.message;
         selfTestStatus.className = 'error';
       }
+      if (permissionRecoveryBox) permissionRecoveryBox.hidden = false;
+      sendTestButton.textContent = 'Try sending again';
     } finally {
       sendTestButton.disabled = false;
     }
