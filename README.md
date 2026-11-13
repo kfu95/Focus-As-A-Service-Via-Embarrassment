@@ -70,4 +70,4 @@ Plain JavaScript MV3, no bundler. `npm run format` uses Prettier; `npm run lint`
 
 Tests cover missing helpers, all-tab confinement while a send waits, worker restart, frozen recipients, exact group membership, partial retries, repeated alert IDs, first-name rendering, and vCards. Manual group delivery and macOS permission prompts remain device checks; passing mocks is not proof of live Messages delivery. This repository has no CI.
 
-`src/telegram.js` and legacy Telegram storage keys are retained for compatibility but are not called by the Messages workflow. There are no donation or payment features.
+There are no donation or payment features.

@@ -35,8 +35,6 @@ function createOptionsEnvironment(overrides = {}) {
       { name: 'Grace', phone: '+14155552672' },
     ],
     message: 'Browsing rule violated',
-    telegramBotToken: 'token',
-    telegramChatId: '-100123',
     ...overrides,
   };
   const elements = {
@@ -63,8 +61,6 @@ function createOptionsEnvironment(overrides = {}) {
     '#send-status': createElement(),
     '#settings-form': createElement(),
     '#status': createElement(),
-    '#telegramBotToken': createElement(),
-    '#telegramChatId': createElement(),
   };
   let storageListener;
   const readStorage = (keys) => {
@@ -171,13 +167,13 @@ describe('options status', () => {
 
   it('shows the persisted background send error', async () => {
     const environment = createOptionsEnvironment({
-      lastSendError: 'Telegram could not be reached',
+      lastSendError: 'Messages helper could not be reached',
     });
 
     await loadOptions(environment);
 
     expect(environment.elements['#send-status'].textContent).toBe(
-      'Telegram could not be reached',
+      'Messages helper could not be reached',
     );
     expect(environment.elements['#send-status'].className).toBe('error');
   });
