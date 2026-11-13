@@ -32,7 +32,7 @@ struct Shortcut {
       "WFWorkflowTypes": [],
       "WFWorkflowInputContentItemClasses": ["WFStringContentItem", "WFGenericFileContentItem"],
       "WFWorkflowActions": [
-        action("getdictionaryfrominput", ["WFInput": input, "UUID": dictionary]),
+        action("detect.dictionary", ["WFInput": input, "UUID": dictionary]),
         action(
           "getvalueforkey",
           [
