@@ -5,7 +5,7 @@ afterEach(() => {
   vi.resetModules();
 });
 
-it('redirects allowed and violating tabs when the helper is missing', async () => {
+it('redirects violating tabs but preserves allowed tabs when the helper is missing', async () => {
   const stored = {
     allowList: 'allowed.example',
     contacts: [
@@ -63,9 +63,7 @@ it('redirects allowed and violating tabs when the helper is missing', async () =
   expect(update).toHaveBeenCalledWith(1, {
     url: 'chrome-extension://test/src/jail.html',
   });
-  expect(update).toHaveBeenCalledWith(2, {
-    url: 'chrome-extension://test/src/jail.html',
-  });
+  expect(update).not.toHaveBeenCalledWith(2, expect.anything());
   expect(stored.lockdown).toBeTruthy();
   expect(fetch).not.toHaveBeenCalled();
 });

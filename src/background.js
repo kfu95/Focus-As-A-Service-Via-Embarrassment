@@ -1,5 +1,9 @@
 import { getTabViolation, parseDomainList } from './matcher.js';
-import { getSettings, normalizeCheckEveryMinutes } from './settings.js';
+import {
+  getSettings,
+  normalizeCheckEveryMinutes,
+  normalizeGracePeriodHours,
+} from './settings.js';
 import { getAlertRecipients } from './contacts.js';
 import { helperRequest, validateNativeRequest, verifySend } from './native.js';
 
@@ -15,16 +19,9 @@ async function configureAlarm() {
   });
 }
 
-async function confineTabs() {
-  const tabs = await chrome.tabs.query({});
+async function confineViolatingTabs(tabs) {
   const results = await Promise.allSettled(
-    tabs
-      .filter(
-        (tab) =>
-          /^https?:/i.test(tab.pendingUrl || tab.url || '') ||
-          tab.url === 'chrome://newtab/',
-      )
-      .map((tab) => chrome.tabs.update(tab.id, { url: jailURL })),
+    tabs.map((tab) => chrome.tabs.update(tab.id, { url: jailURL })),
   );
   for (const result of results) {
     if (result.status === 'rejected')
@@ -36,9 +33,13 @@ async function sendAlert(episode) {
   try {
     const response = await helperRequest({ type: 'send-group', episode });
     verifySend(response, episode);
+    const { gracePeriodHours } = await getSettings();
+    const hours = normalizeGracePeriodHours(gracePeriodHours ?? 24);
+    const gracePeriodUntil = hours > 0 ? Date.now() + hours * 3600 * 1000 : 0;
     await chrome.storage.local.set({
       lockdown: null,
       lastSendError: '',
+      gracePeriodUntil,
     });
   } catch (error) {
     await chrome.storage.local.set({ lastSendError: error.message });
@@ -68,23 +69,27 @@ function createEpisode(id, settings) {
 }
 
 async function evaluateOpenTabs() {
-  const { lockdown } = await chrome.storage.local.get('lockdown');
-  if (lockdown) {
-    await confineTabs();
+  const { lockdown, gracePeriodUntil } = await chrome.storage.local.get([
+    'lockdown',
+    'gracePeriodUntil',
+  ]);
+  if (gracePeriodUntil && Date.now() < gracePeriodUntil) {
     return;
   }
   const settings = await getSettings();
+  const allowList = parseDomainList(settings.allowList);
+  const blockList = parseDomainList(settings.blockList);
   const tabs = await chrome.tabs.query({});
-  if (
-    !tabs.some((tab) =>
-      getTabViolation(
-        tab.pendingUrl || tab.url,
-        parseDomainList(settings.allowList),
-        parseDomainList(settings.blockList),
-      ),
-    )
-  )
+  const violatingTabs = tabs.filter((tab) =>
+    getTabViolation(tab.pendingUrl || tab.url, allowList, blockList),
+  );
+
+  if (violatingTabs.length > 0) {
+    await confineViolatingTabs(violatingTabs);
+  }
+  if (lockdown || violatingTabs.length === 0) {
     return;
+  }
   const id = crypto.randomUUID();
   let episode;
   try {
@@ -96,7 +101,6 @@ async function evaluateOpenTabs() {
     lockdown: episode,
     lastSendError: episode.setupError,
   });
-  await confineTabs();
   if (!episode.setupError) startSend(episode).catch(console.error);
 }
 
@@ -125,7 +129,7 @@ async function retryAlert() {
     lockdown = createEpisode(lockdown.id, settings);
     await chrome.storage.local.set({ lockdown });
   }
-  await confineTabs();
+  await evaluateOpenTabs();
   await startSend(lockdown);
   return { ok: true };
 }
@@ -138,6 +142,10 @@ async function handleMessage(message) {
       return helperRequest({ type: 'contacts' });
     case 'retry-alert':
       return retryAlert();
+    case 'end-grace-period':
+      await chrome.storage.local.set({ gracePeriodUntil: 0 });
+      await evaluateOpenTabs();
+      return { ok: true };
     default:
       throw new Error('Unknown Jail request.');
   }

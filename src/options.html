@@ -125,6 +125,32 @@
             min="0.5"
             step="0.5"
         /></label>
+        <label
+          >Grace period after alert (hours)
+          <span
+            >Browsing rules stay paused for this long after an alert. Set to 0
+            to re-arm immediately.</span
+          >
+          <input
+            id="gracePeriodHours"
+            type="number"
+            min="0"
+            max="168"
+            step="1"
+          />
+        </label>
+        <section
+          id="grace-period-notice"
+          class="warning"
+          aria-labelledby="grace-heading"
+          hidden
+        >
+          <h2 id="grace-heading">Grace period active</h2>
+          <p id="grace-status"></p>
+          <button type="button" id="end-grace-period">
+            Resume enforcement now
+          </button>
+        </section>
         <div class="actions">
           <button type="submit">Save settings</button>
         </div>

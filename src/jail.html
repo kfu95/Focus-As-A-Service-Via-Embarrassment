@@ -11,7 +11,7 @@
       <p class="eyebrow">DIGITAL JAIL</p>
       <h1 id="heading">Your browsing is locked.</h1>
       <p id="explanation">
-        A tab broke your rules. All web tabs stay here until your Mac helper
+        A tab broke your rules. Violating tabs stay here until your Mac helper
         sends every personalized message into one verified group in Messages.
       </p>
       <p id="delivery" role="status" aria-live="polite">
@@ -23,6 +23,12 @@
         <a href="options.html">Contacts and settings</a>
       </p>
       <button id="retry" type="button">Retry group alert</button>
+      <div id="grace-period-banner" hidden>
+        <p id="grace-period-text"></p>
+        <button id="end-grace-period" type="button">
+          Resume enforcement now
+        </button>
+      </div>
       <p id="result" role="alert"></p>
       <p>
         The helper stays installed. Failed sends and denied permissions keep

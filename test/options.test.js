@@ -35,6 +35,7 @@ function createOptionsEnvironment(overrides = {}) {
       { name: 'Grace', phone: '+14155552672' },
     ],
     message: 'Browsing rule violated',
+    gracePeriodHours: 24,
     ...overrides,
   };
   const elements = {
@@ -56,6 +57,10 @@ function createOptionsEnvironment(overrides = {}) {
     '#import-contacts': createElement(),
     '#blockList': createElement(),
     '#checkEveryMinutes': createElement(),
+    '#gracePeriodHours': createElement(),
+    '#grace-period-notice': createElement(),
+    '#grace-status': createElement(),
+    '#end-grace-period': createElement(),
     '#incognito-warning': createElement(),
     '#message': createElement(),
     '#send-status': createElement(),
@@ -302,5 +307,24 @@ describe('options status', () => {
     );
     expect(environment.elements['#send-status'].textContent).toBe('');
     expect(environment.elements['#send-status'].className).toBe('');
+  });
+
+  it('shows grace period notice and allows ending it', async () => {
+    const environment = createOptionsEnvironment({
+      gracePeriodUntil: Date.now() + 86400000,
+    });
+    environment.chrome.runtime.sendMessage = vi.fn(async () => ({ ok: true }));
+
+    await loadOptions(environment);
+
+    expect(environment.elements['#grace-period-notice'].hidden).toBe(false);
+    expect(environment.elements['#grace-status'].textContent).toContain(
+      'Browsing rules are paused',
+    );
+
+    await environment.elements['#end-grace-period'].listeners.click();
+    expect(environment.chrome.runtime.sendMessage).toHaveBeenCalledWith({
+      type: 'end-grace-period',
+    });
   });
 });
