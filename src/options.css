@@ -81,6 +81,75 @@ button:disabled {
   padding-bottom: 12px;
   border-bottom: 1px solid #ddd;
 }
+.setup-steps-list {
+  padding-left: 20px;
+  line-height: 1.6;
+  margin: 0;
+}
+.setup-steps-list li {
+  margin-bottom: 12px;
+}
+.code-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #1e293b;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-top: 6px;
+}
+.code-box pre {
+  margin: 0;
+  color: #38bdf8;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 13px;
+  flex: 1;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  background: transparent;
+  padding: 0;
+}
+.code-box button {
+  padding: 4px 10px;
+  font-size: 12px;
+  background: #334155 !important;
+}
+.helper-check-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+#helper-install-status {
+  margin: 0;
+  font-size: 13px;
+  min-height: 1.2em;
+}
+#helper-install-status.success {
+  color: #08783e;
+  font-weight: 600;
+}
+#helper-install-status.error {
+  color: #b00020;
+}
+.callout-box {
+  background: #f1f5f9;
+  border-left: 4px solid #0a66c2;
+  padding: 12px 16px;
+  border-radius: 4px;
+  margin-top: 12px;
+}
+.callout-box strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #0f172a;
+}
+.callout-box p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #334155;
+}
 .step-tab {
   padding: 6px 12px;
   font-size: 13px;

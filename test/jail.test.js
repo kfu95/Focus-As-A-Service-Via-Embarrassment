@@ -108,7 +108,7 @@ describe('jail lockdown page', () => {
     expect(env.elements['#alert-popup'].showModal).toHaveBeenCalledOnce();
     expect(env.elements['#popup-title'].textContent).toBe('Alert sending');
     expect(env.elements['#popup-body'].textContent).toContain(
-      'emergency group alert is sending in the background',
+      'group alert is sending in the background',
     );
   });
 

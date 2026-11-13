@@ -18,9 +18,9 @@ struct Shortcut {
         "WFWorkflowActionParameters": parameters,
       ]
     }
-    let dictionary = UUID().uuidString
-    let recipients = UUID().uuidString
-    let message = UUID().uuidString
+    let dictionary = "B84E7B3B-89E2-4318-97F6-5FB39F570101"
+    let recipients = "B84E7B3B-89E2-4318-97F6-5FB39F570102"
+    let message = "B84E7B3B-89E2-4318-97F6-5FB39F570103"
     let workflow: [String: Any] = [
       "WFWorkflowName": "Jail Group Start",
       "WFWorkflowClientVersion": "2600",

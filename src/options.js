@@ -11,6 +11,7 @@ import {
   getSettings,
   normalizeCheckEveryMinutes,
   normalizeGracePeriodHours,
+  normalizeSessionDurationHours,
   saveSettings,
   validateDomain,
 } from './settings.js';
@@ -20,8 +21,7 @@ const status = document.querySelector('#status');
 const sendStatus = document.querySelector('#send-status');
 const incognitoWarning = document.querySelector('#incognito-warning');
 const fields = Object.keys(DEFAULT_SETTINGS).filter(
-  (field) =>
-    !['contacts', 'allowList', 'blockList', 'message'].includes(field),
+  (field) => !['contacts', 'allowList', 'blockList', 'message'].includes(field),
 );
 const contactsElement = document.querySelector('#contacts');
 const previews = document.querySelector('#contact-previews');
@@ -41,6 +41,13 @@ const sendTestButton = document.querySelector('#send-test-text');
 const selfTestStatus = document.querySelector('#self-test-status');
 const editSettingsBtn = document.querySelector('#edit-settings-btn');
 const testAgainBtn = document.querySelector('#test-again-btn');
+const helperCommandPre = document.querySelector('#helper-install-command');
+const copyInstallBtn = document.querySelector('#copy-install-cmd');
+const checkHelperBtn = document.querySelector('#check-helper-btn');
+const helperInstallStatus = document.querySelector('#helper-install-status');
+const permissionRecoveryBox = document.querySelector(
+  '#permission-recovery-box',
+);
 
 let domains = [];
 let blockedDomains = [];
@@ -66,6 +73,7 @@ function showSendStatus(message, type) {
 export function setStep(stepNumber) {
   currentStep = stepNumber;
   const stepIds = [
+    '#step-helper',
     '#step-allow',
     '#step-block',
     '#step-contacts',
@@ -84,7 +92,7 @@ export function setStep(stepNumber) {
       tab.setAttribute?.('aria-selected', isCurrent ? 'true' : 'false');
     });
   }
-  if (stepNumber === 6) {
+  if (stepNumber === 7) {
     renderActiveSummary();
   }
 }
@@ -118,13 +126,39 @@ function renderActiveSummary() {
   });
 
   const contactsHeading = document.createElement('h3');
-  contactsHeading.textContent = `Emergency contacts (${contacts.length})`;
+  contactsHeading.textContent = `People that will be texted (${contacts.length})`;
   const contactsUl = document.createElement('ul');
   contacts.forEach((c) => {
     const li = document.createElement('li');
     li.textContent = `${c.name || 'Unnamed'} (${c.phone})`;
     contactsUl.append(li);
   });
+
+  const sessionHeading = document.createElement('h3');
+  sessionHeading.textContent = 'Focus session';
+  const sessionDesc = document.createElement('p');
+  sessionDesc.className = 'session-desc';
+
+  chrome.storage.local
+    ?.get(['sessionExpiresAt', 'sessionDurationHours'])
+    .then(({ sessionExpiresAt, sessionDurationHours }) => {
+      const hours = Number(sessionDurationHours) || 0;
+      const startSessionBtn = document.querySelector('#start-session-btn');
+      if (hours > 0) {
+        if (startSessionBtn) startSessionBtn.hidden = false;
+        const remainingMs = (sessionExpiresAt || 0) - Date.now();
+        if (remainingMs > 0) {
+          const minsLeft = Math.ceil(remainingMs / 60000);
+          sessionDesc.textContent = `Active (${minsLeft} minutes remaining of ${hours}h session).`;
+        } else {
+          sessionDesc.textContent = `Session expired (${hours}h duration). Start a new session to resume enforcement.`;
+        }
+      } else {
+        if (startSessionBtn) startSessionBtn.hidden = true;
+        sessionDesc.textContent = 'Continuous monitoring (runs until paused).';
+      }
+    })
+    .catch(() => {});
 
   card.append(
     blockHeading,
@@ -133,6 +167,8 @@ function renderActiveSummary() {
     allowListUl,
     contactsHeading,
     contactsUl,
+    sessionHeading,
+    sessionDesc,
   );
   container.append(card);
 }
@@ -189,7 +225,57 @@ if (blockedDomainInput) {
   });
 }
 
+if (copyInstallBtn && helperCommandPre) {
+  copyInstallBtn.addEventListener('click', async () => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(helperCommandPre.textContent || '');
+        const prev = copyInstallBtn.textContent;
+        copyInstallBtn.textContent = 'Copied!';
+        setTimeout(() => {
+          copyInstallBtn.textContent = prev;
+        }, 2000);
+      }
+    } catch (err) {
+      console.error('Clipboard copy failed:', err);
+    }
+  });
+}
+
+async function verifyHelperStatus() {
+  if (helperInstallStatus) {
+    helperInstallStatus.textContent = 'Checking…';
+    helperInstallStatus.className = '';
+  }
+  try {
+    const resp = await chrome.runtime.sendMessage({ type: 'helper-status' });
+    if (resp?.ok) {
+      if (helperInstallStatus) {
+        helperInstallStatus.textContent =
+          'Helper and group shortcut are installed.';
+        helperInstallStatus.className = 'success';
+      }
+      return true;
+    }
+    throw new Error(resp?.error || 'Helper returned an error.');
+  } catch (err) {
+    if (helperInstallStatus) {
+      helperInstallStatus.textContent = err.message;
+      helperInstallStatus.className = 'error';
+    }
+    return false;
+  }
+}
+
+if (checkHelperBtn) {
+  checkHelperBtn.addEventListener('click', verifyHelperStatus);
+}
+
 async function load() {
+  if (helperCommandPre && chrome.runtime?.id) {
+    helperCommandPre.textContent = `bash native/install.sh ${chrome.runtime.id}`;
+  }
+
   const settings = await getSettings();
   for (const field of fields) {
     const el = document.querySelector(`#${field}`);
@@ -206,8 +292,10 @@ async function load() {
   const { lastSendError } = await chrome.storage.local.get('lastSendError');
   if (lastSendError && revision === sendStatusRevision)
     showSendStatus(lastSendError, 'error');
-  const { selfPhone, selfTestCompleted } =
-    await chrome.storage.local.get(['selfPhone', 'selfTestCompleted']);
+  const { selfPhone, selfTestCompleted } = await chrome.storage.local.get([
+    'selfPhone',
+    'selfTestCompleted',
+  ]);
   if (selfPhone && selfPhoneInput) selfPhoneInput.value = selfPhone;
 
   if (chrome.extension?.isAllowedIncognitoAccess) {
@@ -219,8 +307,11 @@ async function load() {
   }
   await renderGracePeriod();
 
+  // Check helper status in background
+  verifyHelperStatus().catch(() => {});
+
   if (selfTestCompleted && blockedDomains.length > 0 && contacts.length >= 2) {
-    setStep(6);
+    setStep(7);
   } else {
     setStep(1);
   }
@@ -272,6 +363,9 @@ function validatedValues() {
   );
   settings.gracePeriodHours = normalizeGracePeriodHours(
     settings.gracePeriodHours,
+  );
+  settings.sessionDurationHours = normalizeSessionDurationHours(
+    settings.sessionDurationHours,
   );
   return settings;
 }
@@ -416,7 +510,7 @@ function handleNextFromBlock() {
     return;
   }
   if (blockedDomainError) blockedDomainError.textContent = '';
-  setStep(3);
+  setStep(4);
 }
 
 function handleNextFromContacts() {
@@ -429,7 +523,7 @@ function handleNextFromContacts() {
   try {
     contacts.forEach(validateContact);
     if (contactsError) contactsError.textContent = '';
-    setStep(4);
+    setStep(5);
   } catch (error) {
     if (contactsError) contactsError.textContent = error.message;
   }
@@ -439,17 +533,17 @@ if (document.querySelectorAll) {
   document.querySelectorAll('.step-tab').forEach((tab) => {
     tab.addEventListener('click', () => {
       const step = Number(tab.dataset.step);
-      if (step === 3 && blockedDomains.length === 0) {
+      if (step === 4 && blockedDomains.length === 0) {
         if (blockedDomainError)
           blockedDomainError.textContent = 'Add at least one blocked domain.';
-        setStep(2);
+        setStep(3);
         return;
       }
-      if (step >= 4 && contacts.length < 2) {
+      if (step >= 5 && contacts.length < 2) {
         if (contactsError)
           contactsError.textContent =
             'Add at least 2 contacts for the group alert.';
-        setStep(3);
+        setStep(4);
         return;
       }
       setStep(step);
@@ -459,9 +553,9 @@ if (document.querySelectorAll) {
   document.querySelectorAll('.btn-next').forEach((btn) => {
     btn.addEventListener('click', () => {
       const nextStep = Number(btn.dataset.next);
-      if (nextStep === 3) {
+      if (nextStep === 4) {
         handleNextFromBlock();
-      } else if (nextStep === 4) {
+      } else if (nextStep === 5) {
         handleNextFromContacts();
       } else {
         setStep(nextStep);
@@ -481,7 +575,19 @@ if (editSettingsBtn) {
   editSettingsBtn.addEventListener('click', () => setStep(1));
 }
 if (testAgainBtn) {
-  testAgainBtn.addEventListener('click', () => setStep(5));
+  testAgainBtn.addEventListener('click', () => setStep(6));
+}
+const startSessionBtn = document.querySelector('#start-session-btn');
+if (startSessionBtn) {
+  startSessionBtn.addEventListener('click', async () => {
+    startSessionBtn.disabled = true;
+    try {
+      await chrome.runtime.sendMessage({ type: 'start-session' });
+      renderActiveSummary();
+    } finally {
+      startSessionBtn.disabled = false;
+    }
+  });
 }
 
 if (sendTestButton) {
@@ -524,6 +630,8 @@ if (sendTestButton) {
           'Text sent successfully! macOS permissions are granted.';
         selfTestStatus.className = 'success';
       }
+      if (permissionRecoveryBox) permissionRecoveryBox.hidden = true;
+      sendTestButton.textContent = 'Send text to yourself';
       await chrome.storage.local.set({
         selfPhone: phone,
         selfTestCompleted: true,
@@ -531,12 +639,14 @@ if (sendTestButton) {
       await chrome.runtime
         .sendMessage({ type: 'update-active-icon' })
         .catch(() => {});
-      setTimeout(() => setStep(6), 1200);
+      setTimeout(() => setStep(7), 1200);
     } catch (error) {
       if (selfTestStatus) {
-        selfTestStatus.textContent = `Could not send test text: ${error.message}`;
+        selfTestStatus.textContent = error.message;
         selfTestStatus.className = 'error';
       }
+      if (permissionRecoveryBox) permissionRecoveryBox.hidden = false;
+      sendTestButton.textContent = 'Try sending again';
     } finally {
       sendTestButton.disabled = false;
     }
@@ -554,11 +664,15 @@ if (form) {
       return;
     }
     if (!(await saveWithStatus(settings))) return;
+    const sessionHours = Number(settings.sessionDurationHours) || 0;
+    const sessionExpiresAt =
+      sessionHours > 0 ? Date.now() + sessionHours * 3600 * 1000 : 0;
+    await chrome.storage.local.set({ sessionExpiresAt });
     showStatus('Settings saved.', 'success');
     await chrome.runtime
       .sendMessage({ type: 'update-active-icon' })
       .catch(() => {});
-    setStep(5);
+    setStep(6);
   });
 }
 

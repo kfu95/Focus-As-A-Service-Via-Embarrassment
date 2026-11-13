@@ -41,5 +41,9 @@ cp "$stage/Jail Group Start.shortcut" "$install_dir/Jail Group Start.shortcut"
 /usr/bin/plutil -insert type -string stdio "$stage/host.plist"
 /usr/bin/plutil -insert allowed_origins -json "[\"chrome-extension://$1/\"]" "$stage/host.plist"
 /usr/bin/plutil -convert json -o "$manifest_dir/com.digitaljail.helper.json" "$stage/host.plist"
-open "$install_dir/Jail Group Start.shortcut"
-echo 'Helper installed permanently. Click Add Shortcut in Shortcuts, then Check installation in Jail. No text was sent.'
+if /usr/bin/shortcuts list 2>/dev/null | grep -Fqx "Jail Group Start" && [[ "${2:-}" != "--reimport-shortcut" ]]; then
+  echo 'Helper installed permanently. Shortcut "Jail Group Start" is already installed. Click Check installation in Jail. No text was sent.'
+else
+  open "$install_dir/Jail Group Start.shortcut"
+  echo 'Helper installed permanently. Click Add Shortcut in Shortcuts, then Check installation in Jail. No text was sent.'
+fi

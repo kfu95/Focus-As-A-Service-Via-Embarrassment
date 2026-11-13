@@ -63,6 +63,12 @@ function createOptionsEnvironment(overrides = {}) {
     '#self-phone': createElement(),
     '#send-test-text': createElement(),
     '#self-test-status': createElement(),
+    '#permission-recovery-box': createElement(),
+    '#step-helper': createElement(),
+    '#helper-install-command': createElement(),
+    '#copy-install-cmd': createElement(),
+    '#check-helper-btn': createElement(),
+    '#helper-install-status': createElement(),
     '#step-allow': createElement(),
     '#step-block': createElement(),
     '#step-contacts': createElement(),
@@ -75,6 +81,8 @@ function createOptionsEnvironment(overrides = {}) {
     '#skip-test-btn': createElement(),
     '#checkEveryMinutes': createElement(),
     '#gracePeriodHours': createElement(),
+    '#sessionDurationHours': createElement(),
+    '#start-session-btn': createElement(),
     '#grace-period-notice': createElement(),
     '#grace-status': createElement(),
     '#end-grace-period': createElement(),
@@ -446,5 +454,38 @@ describe('options status', () => {
     await sendButton.listeners.click();
     expect(statusText.textContent).toContain('Shortcuts automation denied');
     expect(statusText.className).toBe('error');
+    expect(sendButton.textContent).toBe('Try sending again');
+    expect(environment.elements['#permission-recovery-box'].hidden).toBe(false);
+
+    // Retrying with success updates recovery box
+    environment.chrome.runtime.sendMessage.mockResolvedValueOnce({ ok: true });
+    await sendButton.listeners.click();
+    expect(environment.elements['#permission-recovery-box'].hidden).toBe(true);
+    expect(sendButton.textContent).toBe('Send text to yourself');
+  });
+
+  it('displays install command on step 1 and verifies helper installation', async () => {
+    const environment = createOptionsEnvironment();
+    environment.chrome.runtime.id = 'abcdefghijklmnopqrstuvwxyzabcdef';
+    environment.chrome.runtime.sendMessage = vi.fn(async (msg) => {
+      if (msg.type === 'helper-status') return { ok: true };
+      return { ok: true };
+    });
+    await loadOptions(environment);
+
+    expect(environment.elements['#helper-install-command'].textContent).toBe(
+      'bash native/install.sh abcdefghijklmnopqrstuvwxyzabcdef',
+    );
+
+    await environment.elements['#check-helper-btn'].listeners.click();
+    expect(environment.chrome.runtime.sendMessage).toHaveBeenCalledWith({
+      type: 'helper-status',
+    });
+    expect(
+      environment.elements['#helper-install-status'].textContent,
+    ).toContain('installed');
+    expect(environment.elements['#helper-install-status'].className).toBe(
+      'success',
+    );
   });
 });

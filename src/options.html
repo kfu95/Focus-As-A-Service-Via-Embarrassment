@@ -13,38 +13,6 @@
         Break a browsing rule and your tabs go to jail until Messages accepts
         your group alert.
       </p>
-      <p
-        id="incognito-warning"
-        class="warning"
-        role="alert"
-        aria-live="polite"
-        hidden
-      ></p>
-      <section
-        id="grace-period-notice"
-        class="warning"
-        aria-labelledby="grace-heading"
-        hidden
-      >
-        <h2 id="grace-heading">Grace period active</h2>
-        <p id="grace-status"></p>
-        <button type="button" id="end-grace-period">
-          Resume enforcement now
-        </button>
-      </section>
-      <section class="warning" aria-labelledby="helper-heading">
-        <h2 id="helper-heading">Mac helper required</h2>
-        <p>
-          Jail requires a small Mac helper. It stays installed and is used only
-          for the texting workflow: sending your alerts and importing contacts
-          you choose. Jail cannot install software itself.
-        </p>
-        <p>
-          Declining installation or a permission prompt after a violation keeps
-          browsing locked.
-          <a href="install.html">Install helper and review permissions</a>.
-        </p>
-      </section>
 
       <nav class="wizard-nav" role="tablist" aria-label="Setup steps">
         <button
@@ -54,7 +22,7 @@
           role="tab"
           aria-selected="true"
         >
-          1. Allow list
+          1. Helper
         </button>
         <button
           type="button"
@@ -63,7 +31,7 @@
           role="tab"
           aria-selected="false"
         >
-          2. Block list
+          2. Allow list
         </button>
         <button
           type="button"
@@ -72,7 +40,7 @@
           role="tab"
           aria-selected="false"
         >
-          3. Contacts
+          3. Block list
         </button>
         <button
           type="button"
@@ -81,7 +49,7 @@
           role="tab"
           aria-selected="false"
         >
-          4. Message
+          4. Contacts
         </button>
         <button
           type="button"
@@ -90,7 +58,7 @@
           role="tab"
           aria-selected="false"
         >
-          5. Permissions
+          5. Message
         </button>
         <button
           type="button"
@@ -99,17 +67,80 @@
           role="tab"
           aria-selected="false"
         >
-          6. Status
+          6. Permissions
+        </button>
+        <button
+          type="button"
+          class="step-tab"
+          data-step="7"
+          role="tab"
+          aria-selected="false"
+        >
+          7. Status
         </button>
       </nav>
 
       <form id="settings-form">
-        <!-- Step 1: Allow list -->
-        <section class="wizard-step" id="step-allow" data-step="1">
-          <h2>Step 1: Allow list</h2>
+        <!-- Step 1: Install Mac Helper & Review Permissions -->
+        <section class="wizard-step" id="step-helper" data-step="1">
+          <h2>Step 1: Install Mac helper</h2>
+          <p
+            id="incognito-warning"
+            class="warning"
+            role="alert"
+            aria-live="polite"
+            hidden
+          ></p>
+          <p>
+            Jail requires a small Mac helper for the texting workflow. It
+            automates group messages and securely looks up contacts when
+            requested.
+          </p>
+          <ol class="setup-steps-list">
+            <li>Open Terminal in your downloaded Jail repository folder.</li>
+            <li>
+              Run this command to build and install the helper:
+              <div class="code-box">
+                <pre id="helper-install-command"></pre>
+                <button type="button" id="copy-install-cmd">Copy</button>
+              </div>
+            </li>
+            <li>
+              When macOS Shortcuts opens, click <strong>Add Shortcut</strong> to
+              install “Jail Group Start”. Do not rename it.
+            </li>
+          </ol>
+          <div class="helper-check-row">
+            <button type="button" id="check-helper-btn">
+              Check helper installation
+            </button>
+            <p id="helper-install-status" role="status" aria-live="polite"></p>
+          </div>
+          <div class="callout-box">
+            <strong>Permissions:</strong>
+            <p>
+              When prompted, allow Jail Helper to automate Messages and
+              Shortcuts under System Settings &rarr; Privacy &amp; Security
+              &rarr; Automation. Choose
+              <strong>Always Allow</strong> so future alerts never get blocked.
+            </p>
+          </div>
+          <div class="step-actions right">
+            <button type="button" class="btn-next" data-next="2">
+              Next: Allow list &rarr;
+            </button>
+          </div>
+        </section>
+
+        <!-- Step 2: Allow list -->
+        <section class="wizard-step" id="step-allow" data-step="2" hidden>
+          <h2>Step 2: Allow list</h2>
           <label for="allowList"
             >Allow list
-            <span>Leave blank if all websites are allowed (except blocked ones).</span>
+            <span
+              >Leave blank if all websites are allowed (except blocked
+              ones).</span
+            >
           </label>
           <div class="allow-list-input">
             <input
@@ -122,19 +153,25 @@
           </div>
           <p id="allow-list-error" class="error-text" role="alert"></p>
           <ul id="allow-list-domains"></ul>
-          <div class="step-actions right">
-            <button type="button" class="btn-next" data-next="2">
+          <div class="step-actions">
+            <button type="button" class="btn-prev" data-prev="1">
+              &larr; Back
+            </button>
+            <button type="button" class="btn-next" data-next="3">
               Next: Block list &rarr;
             </button>
           </div>
         </section>
 
-        <!-- Step 2: Block list -->
-        <section class="wizard-step" id="step-block" data-step="2" hidden>
-          <h2>Step 2: Block list</h2>
+        <!-- Step 3: Block list -->
+        <section class="wizard-step" id="step-block" data-step="3" hidden>
+          <h2>Step 3: Block list</h2>
           <label for="blockListInput"
             >Block list
-            <span>Add at least one domain. Visiting any blocked domain triggers Jail.</span>
+            <span
+              >Add at least one domain. Visiting any blocked domain triggers
+              Jail.</span
+            >
           </label>
           <div class="allow-list-input">
             <input
@@ -149,23 +186,23 @@
           <ul id="block-list-domains"></ul>
           <textarea id="blockList" hidden></textarea>
           <div class="step-actions">
-            <button type="button" class="btn-prev" data-prev="1">
+            <button type="button" class="btn-prev" data-prev="2">
               &larr; Back
             </button>
-            <button type="button" class="btn-next" data-next="3">
+            <button type="button" class="btn-next" data-next="4">
               Next: Contacts &rarr;
             </button>
           </div>
         </section>
 
-        <!-- Step 3: Contacts -->
-        <section class="wizard-step" id="step-contacts" data-step="3" hidden>
-          <h2>Step 3: Emergency contacts</h2>
+        <!-- Step 4: Contacts -->
+        <section class="wizard-step" id="step-contacts" data-step="4" hidden>
+          <h2>Step 4: People that will be texted</h2>
           <fieldset>
             <legend>Contacts</legend>
             <p>
-              Phone numbers must use E.164 format, such as +14155552671. You must
-              have at least 2 contacts for your group alert.
+              Phone numbers must use E.164 format, such as +14155552671. You
+              must have at least 2 contacts for your group alert.
             </p>
             <button type="button" id="load-mac-contacts">
               Allow helper to go through your contacts
@@ -183,28 +220,20 @@
             <div id="contacts"></div>
             <button type="button" id="add-contact">Add contact</button>
             <p id="contacts-error" class="error-text" role="alert"></p>
-            <!-- Hidden backward-compatibility elements -->
-            <div hidden>
-              <div id="contact-drop">
-                <input id="contact-files" type="file" accept=".vcf" multiple />
-              </div>
-              <textarea id="contacts-csv"></textarea>
-              <button type="button" id="import-contacts">Add from CSV</button>
-            </div>
           </fieldset>
           <div class="step-actions">
-            <button type="button" class="btn-prev" data-prev="2">
+            <button type="button" class="btn-prev" data-prev="3">
               &larr; Back
             </button>
-            <button type="button" class="btn-next" data-next="4">
+            <button type="button" class="btn-next" data-next="5">
               Next: Message template &rarr;
             </button>
           </div>
         </section>
 
-        <!-- Step 4: Message Template & Settings -->
-        <section class="wizard-step" id="step-message" data-step="4" hidden>
-          <h2>Step 4: Message template &amp; timing</h2>
+        <!-- Step 5: Message Template & Settings -->
+        <section class="wizard-step" id="step-message" data-step="5" hidden>
+          <h2>Step 5: Message template &amp; timing</h2>
           <label for="contactMessageTemplate"
             >Personalized message template
             <span
@@ -224,6 +253,21 @@
               min="0.5"
               step="0.5"
           /></label>
+          <label for="sessionDurationHours"
+            >Session duration (hours)
+            <span
+              >How long Jail stays active each time. Set to 0 to run
+              continuously until paused.</span
+            >
+            <input
+              id="sessionDurationHours"
+              type="number"
+              min="0"
+              max="168"
+              step="0.5"
+              value="0"
+            />
+          </label>
           <label for="gracePeriodHours"
             >Grace period after alert (hours)
             <span
@@ -244,7 +288,7 @@
             value="A browsing rule was violated."
           />
           <div class="step-actions">
-            <button type="button" class="btn-prev" data-prev="3">
+            <button type="button" class="btn-prev" data-prev="4">
               &larr; Back
             </button>
             <button type="submit" id="save-settings-btn">
@@ -255,14 +299,14 @@
           <p id="send-status" role="status" aria-live="polite"></p>
         </section>
 
-        <!-- Step 5: Permissions Setup (Test text) -->
-        <section class="wizard-step" id="step-permissions" data-step="5" hidden>
-          <h2>Step 5: Permissions setup</h2>
+        <!-- Step 6: Permissions Setup (Test text) -->
+        <section class="wizard-step" id="step-permissions" data-step="6" hidden>
+          <h2>Step 6: Permissions setup</h2>
           <p class="step-description">
-            Settings have been saved. Next, Jail will send out a text to your own
-            number to allow permissions to go through from now on. This triggers
-            macOS Messages and Shortcuts permission prompt once, so future
-            emergency alerts send automatically without interruptions.
+            Settings have been saved. Next, Jail will send out a text to your
+            own number to allow permissions to go through from now on. This
+            triggers macOS Messages and Shortcuts permission prompt once, so
+            future alerts send automatically without interruptions.
           </p>
           <label for="self-phone"
             >Your phone number
@@ -280,32 +324,62 @@
             </button>
           </div>
           <p id="self-test-status" role="status" aria-live="polite"></p>
+          <div id="permission-recovery-box" class="warning" hidden>
+            <strong>Permissions required:</strong>
+            <p id="permission-recovery-text">
+              If you did not allow access, Jail will not work. Open
+              <strong
+                >System Settings &rarr; Privacy &amp; Security &rarr;
+                Automation</strong
+              >, turn on <strong>Messages</strong> under
+              <strong>Jail Helper</strong>, then click &ldquo;Try sending
+              again&rdquo; below.
+            </p>
+          </div>
           <div class="step-actions">
-            <button type="button" class="btn-prev" data-prev="4">
+            <button type="button" class="btn-prev" data-prev="5">
               &larr; Back to settings
             </button>
-            <button type="button" id="skip-test-btn" class="btn-next" data-next="6">
+            <button
+              type="button"
+              id="skip-test-btn"
+              class="btn-next"
+              data-next="7"
+            >
               Skip &amp; View status &rarr;
             </button>
           </div>
         </section>
 
-        <!-- Step 6: Active & Monitoring -->
-        <section class="wizard-step" id="step-active" data-step="6" hidden>
+        <!-- Step 7: Active & Monitoring -->
+        <section class="wizard-step" id="step-active" data-step="7" hidden>
           <div class="active-badge-card">
             <div class="active-indicator"></div>
-            <h2>Jail is up and running and monitoring</h2>
+            <h2>Jail is active and monitoring</h2>
             <p>
               Your rules are active. If you visit any site on your block list,
-              your violating tabs will be redirected to Jail and your emergency
-              contacts will receive a group text.
+              your violating tabs will be redirected to Jail and a group text
+              will be sent to the people you chose.
             </p>
           </div>
+          <section
+            id="grace-period-notice"
+            class="warning"
+            aria-labelledby="grace-heading"
+            hidden
+          >
+            <h2 id="grace-heading">Grace period active</h2>
+            <p id="grace-status"></p>
+            <button type="button" id="end-grace-period">
+              Resume enforcement now
+            </button>
+          </section>
           <div id="active-summary"></div>
           <div class="step-actions">
-            <button type="button" id="edit-settings-btn">
-              Edit settings
+            <button type="button" id="start-session-btn" hidden>
+              Start new focus session
             </button>
+            <button type="button" id="edit-settings-btn">Edit settings</button>
             <button type="button" id="test-again-btn">
               Send another test text
             </button>
