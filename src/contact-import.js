@@ -57,12 +57,15 @@ export function setupContactImport(addContacts, showError) {
       showError(error.message);
     }
   };
-  drop.addEventListener('dragover', (event) => event.preventDefault());
-  drop.addEventListener('drop', (event) => {
-    event.preventDefault();
-    importFiles(event.dataTransfer.files);
-  });
-  document
-    .querySelector('#contact-files')
-    .addEventListener('change', (event) => importFiles(event.target.files));
+  if (drop) {
+    drop.addEventListener('dragover', (event) => event.preventDefault());
+    drop.addEventListener('drop', (event) => {
+      event.preventDefault();
+      importFiles(event.dataTransfer.files);
+    });
+  }
+  const fileInput = document.querySelector('#contact-files');
+  if (fileInput) {
+    fileInput.addEventListener('change', (event) => importFiles(event.target.files));
+  }
 }

@@ -17,12 +17,17 @@ main {
 h1 {
   margin: 0;
 }
+h2 {
+  font-size: 1.25rem;
+  margin-top: 0;
+}
 .warning {
   padding: 10px;
   color: #6b4500;
   background: #fff3cd;
   border: 1px solid #d9a400;
   border-radius: 6px;
+  margin-top: 16px;
 }
 form {
   display: grid;
@@ -50,10 +55,6 @@ textarea {
   border: 1px solid #aaa;
   border-radius: 6px;
 }
-.actions {
-  display: flex;
-  gap: 16px;
-}
 button {
   padding: 9px 13px;
   border: 0;
@@ -61,23 +62,95 @@ button {
   background: #0a66c2;
   color: white;
   cursor: pointer;
+  font-weight: 500;
 }
 button[type='button'] {
   background: #555;
 }
+button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* Wizard navigation tabs */
+.wizard-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #ddd;
+}
+.step-tab {
+  padding: 6px 12px;
+  font-size: 13px;
+  border-radius: 20px;
+  background: #eee !important;
+  color: #444 !important;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+.step-tab:hover {
+  background: #e2e8f0 !important;
+}
+.step-tab.active {
+  background: #0a66c2 !important;
+  color: white !important;
+  font-weight: 600;
+}
+
+/* Wizard step container */
+.wizard-step {
+  display: grid;
+  gap: 16px;
+}
+.wizard-step[hidden] {
+  display: none !important;
+}
+
+.step-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+}
+.step-actions.right {
+  justify-content: flex-end;
+}
+.step-actions .btn-prev {
+  background: #64748b !important;
+}
+.step-actions .btn-next,
+.step-actions button[type='submit'] {
+  background: #0a66c2 !important;
+}
+
 #status,
-#send-status {
+#send-status,
+#self-test-status {
   min-height: 1.4em;
   margin: 0;
 }
 #status.error,
-#send-status.error {
+#send-status.error,
+#self-test-status.error {
   color: #b00020;
 }
 #status.success,
-#send-status.success {
+#send-status.success,
+#self-test-status.success {
   color: #08783e;
 }
+.error-text {
+  color: #b00020;
+  margin: 0;
+  font-size: 13px;
+  min-height: 1.2em;
+}
+
 fieldset {
   border: 1px solid #aaa;
   border-radius: 6px;
@@ -97,16 +170,6 @@ fieldset {
 .contact-row input {
   min-width: 0;
 }
-#contacts-error {
-  color: #b00020;
-  margin: 0;
-}
-@media (max-width: 600px) {
-  .contact-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-}
 
 .allow-list-input {
   display: flex;
@@ -117,81 +180,141 @@ fieldset {
   flex: 1;
   min-width: 0;
 }
-#allow-list-error {
-  color: #b00020;
-  margin: 0;
-}
-#allow-list-domains {
+#allow-list-domains,
+#block-list-domains {
   padding: 0;
   list-style: none;
+  margin: 0;
 }
-#allow-list-domains li {
+#allow-list-domains li,
+#block-list-domains li {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
   margin-top: 8px;
-}
-
-#contact-drop {
-  border: 2px dashed #888;
-  padding: 12px;
+  padding: 6px 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
   border-radius: 6px;
 }
+
 #mac-picker {
   display: grid;
   gap: 8px;
   max-height: 240px;
   overflow: auto;
 }
-pre {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  background: #eee;
-  padding: 12px;
+#mac-picker button {
+  text-align: left;
+  background: #f1f5f9 !important;
+  color: #1e293b !important;
+  border: 1px solid #cbd5e1;
 }
-button:disabled {
-  opacity: 0.6;
-  cursor: wait;
+#mac-picker button:hover {
+  background: #e2e8f0 !important;
 }
-.jail {
-  display: flow-root;
-  background: repeating-linear-gradient(
-    90deg,
-    #191b20 0 16px,
-    #30343c 16px 30px
-  );
-  min-height: 100vh;
+
+/* Active monitoring card */
+.active-badge-card {
+  padding: 20px;
+  background: #fef2f2;
+  border: 2px solid #dc2626;
+  border-radius: 8px;
+  color: #991b1b;
 }
-.eyebrow {
-  letter-spacing: 0.16em;
-  font-size: 0.8rem;
-  font-weight: 700;
+.active-badge-card h2 {
+  margin: 0 0 8px;
+  color: #b91c1c;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
-a {
-  color: #075aaa;
+.active-badge-card h2::before {
+  content: '●';
+  color: #dc2626;
+  font-size: 1.2em;
 }
-input[type='file'] {
-  width: 100%;
-  box-sizing: border-box;
+.active-badge-card p {
+  margin: 0;
+  color: #450a0a;
+  line-height: 1.4;
 }
+
+.summary-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+}
+.summary-card h3 {
+  margin: 12px 0 6px;
+  font-size: 14px;
+  color: #334155;
+}
+.summary-card h3:first-child {
+  margin-top: 0;
+}
+.summary-card ul {
+  margin: 0 0 12px;
+  padding-left: 20px;
+  color: #475569;
+}
+
+/* Modal popup for alert notification */
+dialog#alert-popup {
+  border: 0;
+  border-radius: 12px;
+  padding: 0;
+  max-width: 440px;
+  width: 90%;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  background: white;
+}
+dialog#alert-popup::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+}
+.popup-box {
+  padding: 24px;
+  display: grid;
+  gap: 16px;
+}
+.popup-box h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #111827;
+}
+.popup-box p {
+  margin: 0;
+  line-height: 1.5;
+  color: #374151;
+}
+.popup-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+.popup-actions button {
+  background: #0a66c2 !important;
+  color: white;
+  padding: 8px 20px;
+  border-radius: 6px;
+  border: 0;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 @media (max-width: 600px) {
   main {
     margin: 16px 10px;
     padding: 18px;
   }
-  .actions {
+  .contact-row {
     flex-direction: column;
+    align-items: stretch;
   }
-  fieldset {
-    min-width: 0;
-    padding: 12px;
-  }
-  input,
-  textarea {
-    min-width: 0;
-  }
-  #allow-list-domains span {
-    overflow-wrap: anywhere;
+  .step-actions {
+    flex-direction: column;
+    align-items: stretch;
   }
 }

@@ -41,6 +41,7 @@ async function sendAlert(episode) {
       lastSendError: '',
       gracePeriodUntil,
     });
+    await updateIconState();
   } catch (error) {
     await chrome.storage.local.set({ lastSendError: error.message });
     throw error;
@@ -144,7 +145,17 @@ async function handleMessage(message) {
       return retryAlert();
     case 'end-grace-period':
       await chrome.storage.local.set({ gracePeriodUntil: 0 });
+      await updateIconState();
       await evaluateOpenTabs();
+      return { ok: true };
+    case 'send-test-alert':
+      return helperRequest({
+        type: 'send-test',
+        phone: message.phone,
+        message: message.message || 'Jail test: permissions enabled.',
+      });
+    case 'update-active-icon':
+      await updateIconState();
       return { ok: true };
     default:
       throw new Error('Unknown Jail request.');
@@ -166,14 +177,72 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true;
 });
 
+export async function updateIconState() {
+  if (!chrome.action) return;
+  const settings = await getSettings();
+  const { gracePeriodUntil } =
+    await chrome.storage.local.get('gracePeriodUntil');
+  const inGrace = Boolean(gracePeriodUntil && Date.now() < gracePeriodUntil);
+  const blockList = parseDomainList(settings.blockList);
+  const isConfigured = blockList.length > 0 && settings.contacts?.length >= 2;
+
+  if (isConfigured && !inGrace) {
+    if (chrome.action.setIcon) {
+      await chrome.action
+        .setIcon({
+          path: {
+            16: 'icons/icon-16-active.png',
+            32: 'icons/icon-32-active.png',
+            48: 'icons/icon-48-active.png',
+            128: 'icons/icon-128-active.png',
+          },
+        })
+        .catch(console.error);
+    }
+    if (chrome.action.setBadgeBackgroundColor) {
+      await chrome.action
+        .setBadgeBackgroundColor({ color: '#dc2626' })
+        .catch(console.error);
+    }
+    if (chrome.action.setBadgeText) {
+      await chrome.action.setBadgeText({ text: 'ON' }).catch(console.error);
+    }
+  } else {
+    if (chrome.action.setIcon) {
+      await chrome.action
+        .setIcon({
+          path: {
+            16: 'icons/icon-16.png',
+            32: 'icons/icon-32.png',
+            48: 'icons/icon-48.png',
+            128: 'icons/icon-128.png',
+          },
+        })
+        .catch(console.error);
+    }
+    if (chrome.action.setBadgeText) {
+      await chrome.action
+        .setBadgeText({ text: inGrace ? 'PAUSE' : '' })
+        .catch(console.error);
+    }
+    if (inGrace && chrome.action.setBadgeBackgroundColor) {
+      await chrome.action
+        .setBadgeBackgroundColor({ color: '#f59e0b' })
+        .catch(console.error);
+    }
+  }
+}
+
 const requestCheck = () => checkOpenTabs().catch(console.error);
 chrome.runtime.onInstalled.addListener(() => {
   configureAlarm().catch(console.error);
   chrome.runtime.openOptionsPage().catch(console.error);
+  updateIconState().catch(console.error);
   requestCheck();
 });
 chrome.runtime.onStartup.addListener(() => {
   configureAlarm().catch(console.error);
+  updateIconState().catch(console.error);
   requestCheck();
 });
 chrome.alarms.onAlarm.addListener((alarm) => {
@@ -189,6 +258,8 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local') return;
   if (changes.checkEveryMinutes) configureAlarm().catch(console.error);
   if (changes.allowList || changes.blockList) requestCheck();
+  if (changes.blockList || changes.contacts || changes.gracePeriodUntil)
+    updateIconState().catch(console.error);
 });
 chrome.action.onClicked.addListener(() =>
   chrome.runtime.openOptionsPage().catch(console.error),
