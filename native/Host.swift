@@ -28,7 +28,10 @@ struct Host {
         throw HelperError("Missing phone number.")
       }
       let message = (request["message"] as? String) ?? "Jail test: permissions enabled."
+      // Exercise Messages automation first to prompt for and verify AppleEvents permission:
+      _ = try messages.chats()
       try messages.bootstrap(phones: [phone], message: message)
+      _ = try messages.chats()
       return ["version": 1, "ok": true]
     case "send-group":
       guard let payload = request["episode"] as? [String: Any] else {
