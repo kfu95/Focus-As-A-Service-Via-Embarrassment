@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   normalizeCheckEveryMinutes,
   normalizeGracePeriodHours,
+  normalizeSessionDurationHours,
   validateDomain,
 } from '../src/settings.js';
 
@@ -46,4 +47,20 @@ describe('domain validation', () => {
     (value) =>
       expect(() => validateDomain(value)).toThrow('Enter a valid domain.'),
   );
+});
+
+describe('session duration normalization', () => {
+  it('normalizes valid hours', () => {
+    expect(normalizeSessionDurationHours(2)).toBe(2);
+    expect(normalizeSessionDurationHours('0')).toBe(0);
+    expect(normalizeSessionDurationHours('')).toBe(0);
+    expect(normalizeSessionDurationHours(null)).toBe(0);
+    expect(normalizeSessionDurationHours(200)).toBe(168);
+  });
+
+  it.each(['not-a-number', '-1'])('rejects invalid hours %j', (value) => {
+    expect(() => normalizeSessionDurationHours(value)).toThrow(
+      'Session duration must be a non-negative number of hours.',
+    );
+  });
 });

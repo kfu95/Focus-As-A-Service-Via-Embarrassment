@@ -35,9 +35,7 @@ export function setupContactImport(addContacts, showError) {
         available = response.contacts;
         render();
         showError(
-          available.length
-            ? ''
-            : 'No named contacts with phone numbers found.',
+          available.length ? '' : 'No named contacts with phone numbers found.',
         );
       } catch (error) {
         showError(error.message);
@@ -66,6 +64,8 @@ export function setupContactImport(addContacts, showError) {
   }
   const fileInput = document.querySelector('#contact-files');
   if (fileInput) {
-    fileInput.addEventListener('change', (event) => importFiles(event.target.files));
+    fileInput.addEventListener('change', (event) =>
+      importFiles(event.target.files),
+    );
   }
 }

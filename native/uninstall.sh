@@ -7,3 +7,4 @@ fi
 rm -f "$HOME/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.digitaljail.helper.json"
 rm -rf "$HOME/Library/Application Support/DigitalJail"
 echo 'Helper removed. Delete Jail Group Start in Shortcuts manually. No Chrome settings were changed.'
+echo "It's okay to give up, you're only letting yourself down."

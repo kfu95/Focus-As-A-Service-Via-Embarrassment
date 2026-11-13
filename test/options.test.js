@@ -81,6 +81,8 @@ function createOptionsEnvironment(overrides = {}) {
     '#skip-test-btn': createElement(),
     '#checkEveryMinutes': createElement(),
     '#gracePeriodHours': createElement(),
+    '#sessionDurationHours': createElement(),
+    '#start-session-btn': createElement(),
     '#grace-period-notice': createElement(),
     '#grace-status': createElement(),
     '#end-grace-period': createElement(),
@@ -471,9 +473,9 @@ describe('options status', () => {
     });
     await loadOptions(environment);
 
-    expect(
-      environment.elements['#helper-install-command'].textContent,
-    ).toBe('bash native/install.sh abcdefghijklmnopqrstuvwxyzabcdef');
+    expect(environment.elements['#helper-install-command'].textContent).toBe(
+      'bash native/install.sh abcdefghijklmnopqrstuvwxyzabcdef',
+    );
 
     await environment.elements['#check-helper-btn'].listeners.click();
     expect(environment.chrome.runtime.sendMessage).toHaveBeenCalledWith({

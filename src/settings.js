@@ -8,7 +8,16 @@ export const DEFAULT_SETTINGS = {
   message: 'A browsing rule was violated.',
   checkEveryMinutes: 1,
   gracePeriodHours: 24,
+  sessionDurationHours: 0,
 };
+
+export function normalizeSessionDurationHours(value) {
+  if (value === '' || value === null || value === undefined) return 0;
+  const hours = Number(value);
+  if (!Number.isFinite(hours) || hours < 0)
+    throw new Error('Session duration must be a non-negative number of hours.');
+  return Math.min(168, Math.max(0, hours));
+}
 
 export function normalizeGracePeriodHours(value) {
   if (typeof value === 'string' && !value.trim()) {

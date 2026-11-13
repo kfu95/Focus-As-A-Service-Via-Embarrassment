@@ -48,8 +48,7 @@ async function render() {
     !lockdown && gracePeriodUntil && Date.now() < gracePeriodUntil;
 
   if (lockdown) {
-    document.querySelector('#heading').textContent =
-      'Your browsing is locked.';
+    document.querySelector('#heading').textContent = 'Your browsing is locked.';
     document.querySelector('#explanation').textContent =
       'A tab broke your rules. Violating tabs stay here until Messages accepts all your group messages.';
     document.querySelector('#delivery').textContent =

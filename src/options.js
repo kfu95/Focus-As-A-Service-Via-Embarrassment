@@ -11,6 +11,7 @@ import {
   getSettings,
   normalizeCheckEveryMinutes,
   normalizeGracePeriodHours,
+  normalizeSessionDurationHours,
   saveSettings,
   validateDomain,
 } from './settings.js';
@@ -20,8 +21,7 @@ const status = document.querySelector('#status');
 const sendStatus = document.querySelector('#send-status');
 const incognitoWarning = document.querySelector('#incognito-warning');
 const fields = Object.keys(DEFAULT_SETTINGS).filter(
-  (field) =>
-    !['contacts', 'allowList', 'blockList', 'message'].includes(field),
+  (field) => !['contacts', 'allowList', 'blockList', 'message'].includes(field),
 );
 const contactsElement = document.querySelector('#contacts');
 const previews = document.querySelector('#contact-previews');
@@ -134,6 +134,32 @@ function renderActiveSummary() {
     contactsUl.append(li);
   });
 
+  const sessionHeading = document.createElement('h3');
+  sessionHeading.textContent = 'Focus session';
+  const sessionDesc = document.createElement('p');
+  sessionDesc.className = 'session-desc';
+
+  chrome.storage.local
+    ?.get(['sessionExpiresAt', 'sessionDurationHours'])
+    .then(({ sessionExpiresAt, sessionDurationHours }) => {
+      const hours = Number(sessionDurationHours) || 0;
+      const startSessionBtn = document.querySelector('#start-session-btn');
+      if (hours > 0) {
+        if (startSessionBtn) startSessionBtn.hidden = false;
+        const remainingMs = (sessionExpiresAt || 0) - Date.now();
+        if (remainingMs > 0) {
+          const minsLeft = Math.ceil(remainingMs / 60000);
+          sessionDesc.textContent = `Active (${minsLeft} minutes remaining of ${hours}h session).`;
+        } else {
+          sessionDesc.textContent = `Session expired (${hours}h duration). Start a new session to resume enforcement.`;
+        }
+      } else {
+        if (startSessionBtn) startSessionBtn.hidden = true;
+        sessionDesc.textContent = 'Continuous monitoring (runs until paused).';
+      }
+    })
+    .catch(() => {});
+
   card.append(
     blockHeading,
     blockListUl,
@@ -141,6 +167,8 @@ function renderActiveSummary() {
     allowListUl,
     contactsHeading,
     contactsUl,
+    sessionHeading,
+    sessionDesc,
   );
   container.append(card);
 }
@@ -264,8 +292,10 @@ async function load() {
   const { lastSendError } = await chrome.storage.local.get('lastSendError');
   if (lastSendError && revision === sendStatusRevision)
     showSendStatus(lastSendError, 'error');
-  const { selfPhone, selfTestCompleted } =
-    await chrome.storage.local.get(['selfPhone', 'selfTestCompleted']);
+  const { selfPhone, selfTestCompleted } = await chrome.storage.local.get([
+    'selfPhone',
+    'selfTestCompleted',
+  ]);
   if (selfPhone && selfPhoneInput) selfPhoneInput.value = selfPhone;
 
   if (chrome.extension?.isAllowedIncognitoAccess) {
@@ -333,6 +363,9 @@ function validatedValues() {
   );
   settings.gracePeriodHours = normalizeGracePeriodHours(
     settings.gracePeriodHours,
+  );
+  settings.sessionDurationHours = normalizeSessionDurationHours(
+    settings.sessionDurationHours,
   );
   return settings;
 }
@@ -544,6 +577,18 @@ if (editSettingsBtn) {
 if (testAgainBtn) {
   testAgainBtn.addEventListener('click', () => setStep(6));
 }
+const startSessionBtn = document.querySelector('#start-session-btn');
+if (startSessionBtn) {
+  startSessionBtn.addEventListener('click', async () => {
+    startSessionBtn.disabled = true;
+    try {
+      await chrome.runtime.sendMessage({ type: 'start-session' });
+      renderActiveSummary();
+    } finally {
+      startSessionBtn.disabled = false;
+    }
+  });
+}
 
 if (sendTestButton) {
   sendTestButton.addEventListener('click', async () => {
@@ -619,6 +664,10 @@ if (form) {
       return;
     }
     if (!(await saveWithStatus(settings))) return;
+    const sessionHours = Number(settings.sessionDurationHours) || 0;
+    const sessionExpiresAt =
+      sessionHours > 0 ? Date.now() + sessionHours * 3600 * 1000 : 0;
+    await chrome.storage.local.set({ sessionExpiresAt });
     showStatus('Settings saved.', 'success');
     await chrome.runtime
       .sendMessage({ type: 'update-active-icon' })

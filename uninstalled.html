@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Jail uninstalled</title>
+    <style>
+      :root {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        color: #1d1d1f;
+        background: #f5f5f7;
+      }
+      body {
+        margin: 0;
+        display: flex;
+        min-height: 100vh;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        box-sizing: border-box;
+      }
+      main {
+        max-width: 540px;
+        background: white;
+        padding: 40px;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        text-align: center;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #86868b;
+        margin-bottom: 12px;
+      }
+      h1 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        line-height: 1.3;
+        margin: 0 0 16px 0;
+        color: #1d1d1f;
+      }
+      p {
+        font-size: 15px;
+        line-height: 1.6;
+        color: #6e6e73;
+        margin: 0 0 24px 0;
+      }
+      .footer-note {
+        font-size: 13px;
+        color: #a1a1a6;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <span class="badge">Jail uninstalled</span>
+      <h1>It's okay to give up, you're only letting yourself down</h1>
+      <p>
+        Jail has been removed from Chrome. Your browsing rules are no longer
+        enforced and no alerts will be sent.
+      </p>
+      <p class="footer-note">
+        To completely remove the companion Mac helper, run
+        <code>bash native/uninstall.sh --confirm</code> in Terminal.
+      </p>
+    </main>
+  </body>
+</html>

@@ -3,6 +3,7 @@ import {
   getSettings,
   normalizeCheckEveryMinutes,
   normalizeGracePeriodHours,
+  normalizeSessionDurationHours,
 } from './settings.js';
 import { getAlertRecipients } from './contacts.js';
 import { helperRequest, validateNativeRequest, verifySend } from './native.js';
@@ -70,11 +71,16 @@ function createEpisode(id, settings) {
 }
 
 async function evaluateOpenTabs() {
-  const { lockdown, gracePeriodUntil } = await chrome.storage.local.get([
-    'lockdown',
-    'gracePeriodUntil',
-  ]);
+  const { lockdown, gracePeriodUntil, sessionExpiresAt } =
+    await chrome.storage.local.get([
+      'lockdown',
+      'gracePeriodUntil',
+      'sessionExpiresAt',
+    ]);
   if (gracePeriodUntil && Date.now() < gracePeriodUntil) {
+    return;
+  }
+  if (sessionExpiresAt && Date.now() > sessionExpiresAt) {
     return;
   }
   const settings = await getSettings();
@@ -157,14 +163,25 @@ async function handleMessage(message) {
     case 'update-active-icon':
       await updateIconState();
       return { ok: true };
+    case 'start-session': {
+      const { sessionDurationHours } = await getSettings();
+      const hours = normalizeSessionDurationHours(
+        message.hours ?? sessionDurationHours,
+      );
+      const sessionExpiresAt = hours > 0 ? Date.now() + hours * 3600 * 1000 : 0;
+      await chrome.storage.local.set({ sessionExpiresAt });
+      await updateIconState();
+      await evaluateOpenTabs();
+      return { ok: true, sessionExpiresAt };
+    }
     default:
       throw new Error('Unknown Jail request.');
   }
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  const allowed = ['src/options.html', 'src/jail.html', 'src/install.html'].map(
-    (p) => chrome.runtime.getURL(p),
+  const allowed = ['src/options.html', 'src/jail.html'].map((p) =>
+    chrome.runtime.getURL(p),
   );
   if (
     sender.id !== chrome.runtime.id ||
@@ -180,13 +197,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 export async function updateIconState() {
   if (!chrome.action) return;
   const settings = await getSettings();
-  const { gracePeriodUntil } =
-    await chrome.storage.local.get('gracePeriodUntil');
+  const { gracePeriodUntil, sessionExpiresAt } = await chrome.storage.local.get(
+    ['gracePeriodUntil', 'sessionExpiresAt'],
+  );
   const inGrace = Boolean(gracePeriodUntil && Date.now() < gracePeriodUntil);
+  const sessionExpired = Boolean(
+    sessionExpiresAt && Date.now() > sessionExpiresAt,
+  );
   const blockList = parseDomainList(settings.blockList);
   const isConfigured = blockList.length > 0 && settings.contacts?.length >= 2;
 
-  if (isConfigured && !inGrace) {
+  if (isConfigured && !inGrace && !sessionExpired) {
     if (chrome.action.setIcon) {
       await chrome.action
         .setIcon({
@@ -221,8 +242,9 @@ export async function updateIconState() {
         .catch(console.error);
     }
     if (chrome.action.setBadgeText) {
+      const badgeText = inGrace ? 'PAUSE' : sessionExpired ? 'OFF' : '';
       await chrome.action
-        .setBadgeText({ text: inGrace ? 'PAUSE' : '' })
+        .setBadgeText({ text: badgeText })
         .catch(console.error);
     }
     if (inGrace && chrome.action.setBadgeBackgroundColor) {
@@ -233,15 +255,27 @@ export async function updateIconState() {
   }
 }
 
+function configureUninstallURL() {
+  if (chrome.runtime?.setUninstallURL) {
+    chrome.runtime
+      .setUninstallURL(
+        'https://kfu95.github.io/Focus-As-A-Service-Via-Embarrassment/uninstalled.html',
+      )
+      .catch(() => {});
+  }
+}
+
 const requestCheck = () => checkOpenTabs().catch(console.error);
 chrome.runtime.onInstalled.addListener(() => {
   configureAlarm().catch(console.error);
+  configureUninstallURL();
   chrome.runtime.openOptionsPage().catch(console.error);
   updateIconState().catch(console.error);
   requestCheck();
 });
 chrome.runtime.onStartup.addListener(() => {
   configureAlarm().catch(console.error);
+  configureUninstallURL();
   updateIconState().catch(console.error);
   requestCheck();
 });
