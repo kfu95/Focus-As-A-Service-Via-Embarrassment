@@ -63,6 +63,11 @@ function createOptionsEnvironment(overrides = {}) {
     '#self-phone': createElement(),
     '#send-test-text': createElement(),
     '#self-test-status': createElement(),
+    '#step-helper': createElement(),
+    '#helper-install-command': createElement(),
+    '#copy-install-cmd': createElement(),
+    '#check-helper-btn': createElement(),
+    '#helper-install-status': createElement(),
     '#step-allow': createElement(),
     '#step-block': createElement(),
     '#step-contacts': createElement(),
@@ -446,5 +451,30 @@ describe('options status', () => {
     await sendButton.listeners.click();
     expect(statusText.textContent).toContain('Shortcuts automation denied');
     expect(statusText.className).toBe('error');
+  });
+
+  it('displays install command on step 1 and verifies helper installation', async () => {
+    const environment = createOptionsEnvironment();
+    environment.chrome.runtime.id = 'abcdefghijklmnopqrstuvwxyzabcdef';
+    environment.chrome.runtime.sendMessage = vi.fn(async (msg) => {
+      if (msg.type === 'helper-status') return { ok: true };
+      return { ok: true };
+    });
+    await loadOptions(environment);
+
+    expect(
+      environment.elements['#helper-install-command'].textContent,
+    ).toBe('bash native/install.sh abcdefghijklmnopqrstuvwxyzabcdef');
+
+    await environment.elements['#check-helper-btn'].listeners.click();
+    expect(environment.chrome.runtime.sendMessage).toHaveBeenCalledWith({
+      type: 'helper-status',
+    });
+    expect(
+      environment.elements['#helper-install-status'].textContent,
+    ).toContain('installed');
+    expect(environment.elements['#helper-install-status'].className).toBe(
+      'success',
+    );
   });
 });
