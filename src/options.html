@@ -20,6 +20,18 @@
         aria-live="polite"
         hidden
       ></p>
+      <section
+        id="grace-period-notice"
+        class="warning"
+        aria-labelledby="grace-heading"
+        hidden
+      >
+        <h2 id="grace-heading">Grace period active</h2>
+        <p id="grace-status"></p>
+        <button type="button" id="end-grace-period">
+          Resume enforcement now
+        </button>
+      </section>
       <section class="warning" aria-labelledby="helper-heading">
         <h2 id="helper-heading">Mac helper required</h2>
         <p>
@@ -28,21 +40,76 @@
           you choose. Jail cannot install software itself.
         </p>
         <p>
-          All chosen contacts will share one group chat. Each gets a message in
-          that group: “Hi &lt;first name&gt;, I miss you”. Messages may reuse a
-          group with exactly the same people.
-        </p>
-        <p>
           Declining installation or a permission prompt after a violation keeps
           browsing locked.
           <a href="install.html">Install helper and review permissions</a>.
         </p>
       </section>
+
+      <nav class="wizard-nav" role="tablist" aria-label="Setup steps">
+        <button
+          type="button"
+          class="step-tab active"
+          data-step="1"
+          role="tab"
+          aria-selected="true"
+        >
+          1. Allow list
+        </button>
+        <button
+          type="button"
+          class="step-tab"
+          data-step="2"
+          role="tab"
+          aria-selected="false"
+        >
+          2. Block list
+        </button>
+        <button
+          type="button"
+          class="step-tab"
+          data-step="3"
+          role="tab"
+          aria-selected="false"
+        >
+          3. Contacts
+        </button>
+        <button
+          type="button"
+          class="step-tab"
+          data-step="4"
+          role="tab"
+          aria-selected="false"
+        >
+          4. Message
+        </button>
+        <button
+          type="button"
+          class="step-tab"
+          data-step="5"
+          role="tab"
+          aria-selected="false"
+        >
+          5. Permissions
+        </button>
+        <button
+          type="button"
+          class="step-tab"
+          data-step="6"
+          role="tab"
+          aria-selected="false"
+        >
+          6. Status
+        </button>
+      </nav>
+
       <form id="settings-form">
-        <div>
+        <!-- Step 1: Allow list -->
+        <section class="wizard-step" id="step-allow" data-step="1">
+          <h2>Step 1: Allow list</h2>
           <label for="allowList"
             >Allow list
-            <span>Leave empty to allow every site not blocked.</span>
+            <span>Leave blank if all websites are allowed (except blocked ones).</span>
           </label>
           <div class="allow-list-input">
             <input
@@ -53,109 +120,197 @@
             />
             <button type="button" id="add-domain">Add</button>
           </div>
-          <p id="allow-list-error" role="alert"></p>
+          <p id="allow-list-error" class="error-text" role="alert"></p>
           <ul id="allow-list-domains"></ul>
-        </div>
-        <label
-          >Block list
-          <span>One domain per line. The block list always wins.</span
-          ><textarea
-            id="blockList"
-            rows="6"
-            placeholder="distracting.example"
-          ></textarea>
-        </label>
-        <fieldset>
-          <legend>Contacts</legend>
-          <p>
-            Phone numbers must use E.164 format, such as +14155552671. Changes
-            are saved with settings.
-          </p>
-          <div id="contact-drop">
-            <label
-              >Drop contact cards here, or choose .vcf files<input
-                id="contact-files"
-                type="file"
-                accept=".vcf"
-                multiple
-            /></label>
+          <div class="step-actions right">
+            <button type="button" class="btn-next" data-next="2">
+              Next: Block list &rarr;
+            </button>
           </div>
-          <p>
-            Mac Contacts access is optional and requested only when you click
-            below. Allow Jail Helper in System Settings → Privacy &amp; Security
-            → Contacts.
-          </p>
-          <button type="button" id="load-mac-contacts">
-            Pick from Mac Contacts
-          </button>
-          <label
-            >Search Mac contacts<input id="contact-search" type="search"
-          /></label>
-          <div id="mac-picker" aria-live="polite"></div>
-          <div id="contacts"></div>
-          <button type="button" id="add-contact">Add contact</button>
-          <label
-            >Paste CSV
-            <span>Use name,phone columns, one contact per line.</span>
-            <textarea
-              id="contacts-csv"
-              rows="3"
-              placeholder="name,phone"
-            ></textarea>
+        </section>
+
+        <!-- Step 2: Block list -->
+        <section class="wizard-step" id="step-block" data-step="2" hidden>
+          <h2>Step 2: Block list</h2>
+          <label for="blockListInput"
+            >Block list
+            <span>Add at least one domain. Visiting any blocked domain triggers Jail.</span>
           </label>
-          <button type="button" id="import-contacts">Add from CSV</button>
-          <p id="contacts-error" role="alert"></p>
-        </fieldset>
-        <label
-          >Personalized message template
-          <span
-            >Use {name} for the first name. Each message is sent into the same
-            group containing all chosen contacts.</span
-          >
-          <textarea id="contactMessageTemplate" rows="3"></textarea>
-        </label>
-        <section aria-labelledby="preview-heading">
-          <h2 id="preview-heading">Message previews</h2>
-          <div id="contact-previews"></div>
+          <div class="allow-list-input">
+            <input
+              id="blockListInput"
+              type="text"
+              placeholder="distracting.example"
+              aria-describedby="block-list-error"
+            />
+            <button type="button" id="add-block-domain">Add</button>
+          </div>
+          <p id="block-list-error" class="error-text" role="alert"></p>
+          <ul id="block-list-domains"></ul>
+          <textarea id="blockList" hidden></textarea>
+          <div class="step-actions">
+            <button type="button" class="btn-prev" data-prev="1">
+              &larr; Back
+            </button>
+            <button type="button" class="btn-next" data-next="3">
+              Next: Contacts &rarr;
+            </button>
+          </div>
         </section>
-        <label
-          >Check every (minutes)<input
-            id="checkEveryMinutes"
-            type="number"
-            min="0.5"
-            step="0.5"
-        /></label>
-        <label
-          >Grace period after alert (hours)
-          <span
-            >Browsing rules stay paused for this long after an alert. Set to 0
-            to re-arm immediately.</span
-          >
+
+        <!-- Step 3: Contacts -->
+        <section class="wizard-step" id="step-contacts" data-step="3" hidden>
+          <h2>Step 3: Emergency contacts</h2>
+          <fieldset>
+            <legend>Contacts</legend>
+            <p>
+              Phone numbers must use E.164 format, such as +14155552671. You must
+              have at least 2 contacts for your group alert.
+            </p>
+            <button type="button" id="load-mac-contacts">
+              Allow helper to go through your contacts
+            </button>
+            <label for="contact-search"
+              >Search Mac contacts
+              <span>Search by name or phone number</span>
+              <input
+                id="contact-search"
+                type="search"
+                placeholder="Type a name or phone number..."
+              />
+            </label>
+            <div id="mac-picker" aria-live="polite"></div>
+            <div id="contacts"></div>
+            <button type="button" id="add-contact">Add contact</button>
+            <p id="contacts-error" class="error-text" role="alert"></p>
+            <!-- Hidden backward-compatibility elements -->
+            <div hidden>
+              <div id="contact-drop">
+                <input id="contact-files" type="file" accept=".vcf" multiple />
+              </div>
+              <textarea id="contacts-csv"></textarea>
+              <button type="button" id="import-contacts">Add from CSV</button>
+            </div>
+          </fieldset>
+          <div class="step-actions">
+            <button type="button" class="btn-prev" data-prev="2">
+              &larr; Back
+            </button>
+            <button type="button" class="btn-next" data-next="4">
+              Next: Message template &rarr;
+            </button>
+          </div>
+        </section>
+
+        <!-- Step 4: Message Template & Settings -->
+        <section class="wizard-step" id="step-message" data-step="4" hidden>
+          <h2>Step 4: Message template &amp; timing</h2>
+          <label for="contactMessageTemplate"
+            >Personalized message template
+            <span
+              >What message do you want to send to all of them. Leave {name} as
+              it'll go through and use their first name for all of them</span
+            >
+            <textarea id="contactMessageTemplate" rows="3"></textarea>
+          </label>
+          <section aria-labelledby="preview-heading">
+            <h3 id="preview-heading">Message previews</h3>
+            <div id="contact-previews"></div>
+          </section>
+          <label for="checkEveryMinutes"
+            >Check every (minutes)<input
+              id="checkEveryMinutes"
+              type="number"
+              min="0.5"
+              step="0.5"
+          /></label>
+          <label for="gracePeriodHours"
+            >Grace period after alert (hours)
+            <span
+              >Browsing rules stay paused for this long after an alert. Set to 0
+              to re-arm immediately.</span
+            >
+            <input
+              id="gracePeriodHours"
+              type="number"
+              min="0"
+              max="168"
+              step="1"
+            />
+          </label>
           <input
-            id="gracePeriodHours"
-            type="number"
-            min="0"
-            max="168"
-            step="1"
+            id="message"
+            type="hidden"
+            value="A browsing rule was violated."
           />
-        </label>
-        <section
-          id="grace-period-notice"
-          class="warning"
-          aria-labelledby="grace-heading"
-          hidden
-        >
-          <h2 id="grace-heading">Grace period active</h2>
-          <p id="grace-status"></p>
-          <button type="button" id="end-grace-period">
-            Resume enforcement now
-          </button>
+          <div class="step-actions">
+            <button type="button" class="btn-prev" data-prev="3">
+              &larr; Back
+            </button>
+            <button type="submit" id="save-settings-btn">
+              Save settings &amp; Continue &rarr;
+            </button>
+          </div>
+          <p id="status" role="status" aria-live="polite"></p>
+          <p id="send-status" role="status" aria-live="polite"></p>
         </section>
-        <div class="actions">
-          <button type="submit">Save settings</button>
-        </div>
-        <p id="status" role="status" aria-live="polite"></p>
-        <p id="send-status" role="status" aria-live="polite"></p>
+
+        <!-- Step 5: Permissions Setup (Test text) -->
+        <section class="wizard-step" id="step-permissions" data-step="5" hidden>
+          <h2>Step 5: Permissions setup</h2>
+          <p class="step-description">
+            Settings have been saved. Next, Jail will send out a text to your own
+            number to allow permissions to go through from now on. This triggers
+            macOS Messages and Shortcuts permission prompt once, so future
+            emergency alerts send automatically without interruptions.
+          </p>
+          <label for="self-phone"
+            >Your phone number
+            <span>Enter your number in E.164 format (+1XXXXXXXXXX)</span>
+          </label>
+          <div class="allow-list-input">
+            <input
+              id="self-phone"
+              type="tel"
+              placeholder="+14155552671"
+              aria-describedby="self-test-status"
+            />
+            <button type="button" id="send-test-text">
+              Send text to yourself
+            </button>
+          </div>
+          <p id="self-test-status" role="status" aria-live="polite"></p>
+          <div class="step-actions">
+            <button type="button" class="btn-prev" data-prev="4">
+              &larr; Back to settings
+            </button>
+            <button type="button" id="skip-test-btn" class="btn-next" data-next="6">
+              Skip &amp; View status &rarr;
+            </button>
+          </div>
+        </section>
+
+        <!-- Step 6: Active & Monitoring -->
+        <section class="wizard-step" id="step-active" data-step="6" hidden>
+          <div class="active-badge-card">
+            <div class="active-indicator"></div>
+            <h2>Jail is up and running and monitoring</h2>
+            <p>
+              Your rules are active. If you visit any site on your block list,
+              your violating tabs will be redirected to Jail and your emergency
+              contacts will receive a group text.
+            </p>
+          </div>
+          <div id="active-summary"></div>
+          <div class="step-actions">
+            <button type="button" id="edit-settings-btn">
+              Edit settings
+            </button>
+            <button type="button" id="test-again-btn">
+              Send another test text
+            </button>
+          </div>
+        </section>
       </form>
     </main>
     <script type="module" src="options.js"></script>

@@ -23,6 +23,13 @@ struct Host {
       return ["version": 1, "ok": true]
     case "contacts":
       return ["version": 1, "ok": true, "contacts": try readContacts()]
+    case "send-test":
+      guard let phone = request["phone"] as? String, !phone.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        throw HelperError("Missing phone number.")
+      }
+      let message = (request["message"] as? String) ?? "Jail test: permissions enabled."
+      try messages.bootstrap(phones: [phone], message: message)
+      return ["version": 1, "ok": true]
     case "send-group":
       guard let payload = request["episode"] as? [String: Any] else {
         throw HelperError("Missing alert.")

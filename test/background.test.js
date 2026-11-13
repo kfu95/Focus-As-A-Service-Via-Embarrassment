@@ -54,7 +54,12 @@ function environment() {
       onReplaced: event('replaced'),
     },
     alarms: { create: vi.fn(async () => {}), onAlarm: event('alarm') },
-    action: { onClicked: event('clicked') },
+    action: {
+      onClicked: event('clicked'),
+      setIcon: vi.fn(async () => {}),
+      setBadgeText: vi.fn(async () => {}),
+      setBadgeBackgroundColor: vi.fn(async () => {}),
+    },
     storage: {
       local: {
         get: vi.fn(async (keys) =>
@@ -100,10 +105,10 @@ function environment() {
     setTabs: (next) => {
       tabs = next;
     },
-    message: (type) =>
+    message: (msg) =>
       new Promise((resolve) =>
         listeners.message(
-          { type },
+          typeof msg === 'string' ? { type: msg } : msg,
           { id: 'test', url: 'chrome-extension://test/src/options.html' },
           resolve,
         ),
@@ -300,5 +305,46 @@ describe('persistent Messages lockdown', () => {
       ),
     ).toBeUndefined();
     expect(env.chrome.runtime.sendNativeMessage).not.toHaveBeenCalled();
+  });
+  it('handles send-test-alert message and updates icon state', async () => {
+    const env = environment();
+    const { updateIconState } = await load(env);
+    expect(
+      await env.message({
+        type: 'send-test-alert',
+        phone: '+14155551234',
+        message: 'Test text',
+      }),
+    ).toEqual({
+      version: 1,
+      ok: true,
+    });
+    expect(env.chrome.runtime.sendNativeMessage).toHaveBeenCalledWith(
+      'com.digitaljail.helper',
+      expect.objectContaining({
+        type: 'send-test',
+        phone: '+14155551234',
+        message: 'Test text',
+      }),
+    );
+
+    // Test icon update when configured
+    env.stored.blockList = 'blocked.example';
+    env.stored.contacts = [
+      { name: 'Ada', phone: '+14155552671' },
+      { name: 'Grace', phone: '+14155552672' },
+    ];
+    await updateIconState();
+    expect(env.chrome.action.setIcon).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: expect.objectContaining({
+          16: 'icons/icon-16-active.png',
+        }),
+      }),
+    );
+    expect(env.chrome.action.setBadgeText).toHaveBeenCalledWith({ text: 'ON' });
+    expect(env.chrome.action.setBadgeBackgroundColor).toHaveBeenCalledWith({
+      color: '#dc2626',
+    });
   });
 });

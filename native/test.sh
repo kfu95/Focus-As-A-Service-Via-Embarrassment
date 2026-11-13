@@ -33,6 +33,7 @@ function frame(body) {
 }
 assert.match(exchange(frame({version:2})).error,/protocol version/);
 assert.match(exchange(frame({version:1,type:'unknown'})).error,/Unknown/);
+assert.match(exchange(frame({version:1,type:'send-test'})).error,/phone/);
 assert.match(exchange(frame({version:1,type:'send-group',episode:{id:'bad',recipients:[]}})).error,/Invalid alert/);
 assert.match(exchange(frame({}), 'chrome-extension://wrong/').error,/origin/);
 const oversized=Buffer.alloc(4);oversized.writeUInt32LE(1000001);

@@ -56,6 +56,23 @@ function createOptionsEnvironment(overrides = {}) {
     '#add-contact': createElement(),
     '#import-contacts': createElement(),
     '#blockList': createElement(),
+    '#blockListInput': createElement(),
+    '#block-list-domains': createElement(),
+    '#block-list-error': createElement(),
+    '#add-block-domain': createElement(),
+    '#self-phone': createElement(),
+    '#send-test-text': createElement(),
+    '#self-test-status': createElement(),
+    '#step-allow': createElement(),
+    '#step-block': createElement(),
+    '#step-contacts': createElement(),
+    '#step-message': createElement(),
+    '#step-permissions': createElement(),
+    '#step-active': createElement(),
+    '#active-summary': createElement(),
+    '#edit-settings-btn': createElement(),
+    '#test-again-btn': createElement(),
+    '#skip-test-btn': createElement(),
     '#checkEveryMinutes': createElement(),
     '#gracePeriodHours': createElement(),
     '#grace-period-notice': createElement(),
@@ -326,5 +343,108 @@ describe('options status', () => {
     expect(environment.chrome.runtime.sendMessage).toHaveBeenCalledWith({
       type: 'end-grace-period',
     });
+  });
+
+  it('loads, adds, validates, removes, and saves block-list domains with allow-list format', async () => {
+    const environment = createOptionsEnvironment({
+      blockList: 'ExistingBlocked.Example\nsecond-blocked.example',
+    });
+    await loadOptions(environment);
+    const input = environment.elements['#blockListInput'];
+    const list = environment.elements['#block-list-domains'];
+    const error = environment.elements['#block-list-error'];
+
+    expect(list.append).toHaveBeenCalledTimes(2);
+    expect(
+      list.append.mock.calls[0][0].append.mock.calls[0][0].textContent,
+    ).toBe('existingblocked.example');
+
+    input.value = ' https://NewBlocked.Example/path ';
+    input.listeners.keydown({ key: 'Enter', preventDefault: vi.fn() });
+    expect(input.value).toBe('');
+
+    input.value = '*.NEWBLOCKED.example';
+    environment.elements['#add-block-domain'].listeners.click();
+    expect(error.textContent).toBe('Domain already added.');
+
+    input.value = 'invalid domain';
+    environment.elements['#add-block-domain'].listeners.click();
+    expect(error.textContent).toBe('Enter a valid domain.');
+
+    const lastRow = list.append.mock.calls.at(-1)[0];
+    lastRow.append.mock.calls[0][1].listeners.click();
+    await environment.elements['#settings-form'].listeners.submit({
+      preventDefault: vi.fn(),
+    });
+    expect(environment.stored.blockList).toBe(
+      'existingblocked.example\nsecond-blocked.example',
+    );
+  });
+
+  it('rejects saving when block list is empty', async () => {
+    const environment = createOptionsEnvironment({ blockList: '' });
+    await loadOptions(environment);
+    await environment.elements['#settings-form'].listeners.submit({
+      preventDefault: vi.fn(),
+    });
+    expect(environment.elements['#status'].textContent).toBe(
+      'Add at least one blocked domain.',
+    );
+    expect(environment.elements['#status'].className).toBe('error');
+  });
+
+  it('sends test text to self, updates status, and saves state', async () => {
+    const environment = createOptionsEnvironment();
+    environment.chrome.runtime.sendMessage = vi.fn(async (msg) => {
+      if (msg.type === 'send-test-alert') return { ok: true };
+      return { ok: true };
+    });
+    await loadOptions(environment);
+
+    const phoneInput = environment.elements['#self-phone'];
+    const sendButton = environment.elements['#send-test-text'];
+    const statusText = environment.elements['#self-test-status'];
+
+    phoneInput.value = '';
+    await sendButton.listeners.click();
+    expect(statusText.textContent).toContain('Enter your phone number');
+    expect(statusText.className).toBe('error');
+
+    phoneInput.value = 'bad-phone';
+    await sendButton.listeners.click();
+    expect(statusText.textContent).toContain('E.164');
+    expect(statusText.className).toBe('error');
+
+    phoneInput.value = '+14155559999';
+    await sendButton.listeners.click();
+    expect(environment.chrome.runtime.sendMessage).toHaveBeenCalledWith({
+      type: 'send-test-alert',
+      phone: '+14155559999',
+      message:
+        'Jail test: permissions enabled. Future alerts will send automatically.',
+    });
+    expect(statusText.textContent).toContain('Text sent successfully');
+    expect(statusText.className).toBe('success');
+    expect(environment.stored.selfPhone).toBe('+14155559999');
+    expect(environment.stored.selfTestCompleted).toBe(true);
+  });
+
+  it('handles test text failure with clear error', async () => {
+    const environment = createOptionsEnvironment();
+    environment.chrome.runtime.sendMessage = vi.fn(async (msg) => {
+      if (msg.type === 'send-test-alert')
+        return { ok: false, error: 'Shortcuts automation denied' };
+      return { ok: true };
+    });
+    await loadOptions(environment);
+
+    const phoneInput = environment.elements['#self-phone'];
+    const sendButton = environment.elements['#send-test-text'];
+    const statusText = environment.elements['#self-test-status'];
+
+    phoneInput.value = '+14155559999';
+    await sendButton.listeners.click();
+    expect(statusText.textContent).toContain('Shortcuts automation denied');
+    expect(statusText.className).toBe('error');
   });
 });
