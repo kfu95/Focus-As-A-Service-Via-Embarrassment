@@ -28,9 +28,20 @@ struct Host {
         throw HelperError("Missing phone number.")
       }
       let message = (request["message"] as? String) ?? "Jail test: permissions enabled."
-      // Exercise Messages automation first to prompt for and verify AppleEvents permission:
-      _ = try messages.chats()
-      try messages.bootstrap(phones: [phone], message: message)
+      do {
+        _ = try messages.chats()
+      } catch {
+        throw HelperError(
+          "Permission denied. Jail will not work without Messages automation. Allow Jail Helper in System Settings → Privacy & Security → Automation, then try sending again."
+        )
+      }
+      do {
+        try messages.bootstrap(phones: [phone], message: message)
+      } catch {
+        throw HelperError(
+          "Shortcuts send failed. Jail will not work without permission to send messages. Allow Jail Group Start to send messages, then try sending again. \(error.localizedDescription)"
+        )
+      }
       _ = try messages.chats()
       return ["version": 1, "ok": true]
     case "send-group":

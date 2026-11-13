@@ -63,6 +63,7 @@ function createOptionsEnvironment(overrides = {}) {
     '#self-phone': createElement(),
     '#send-test-text': createElement(),
     '#self-test-status': createElement(),
+    '#permission-recovery-box': createElement(),
     '#step-helper': createElement(),
     '#helper-install-command': createElement(),
     '#copy-install-cmd': createElement(),
@@ -451,6 +452,14 @@ describe('options status', () => {
     await sendButton.listeners.click();
     expect(statusText.textContent).toContain('Shortcuts automation denied');
     expect(statusText.className).toBe('error');
+    expect(sendButton.textContent).toBe('Try sending again');
+    expect(environment.elements['#permission-recovery-box'].hidden).toBe(false);
+
+    // Retrying with success updates recovery box
+    environment.chrome.runtime.sendMessage.mockResolvedValueOnce({ ok: true });
+    await sendButton.listeners.click();
+    expect(environment.elements['#permission-recovery-box'].hidden).toBe(true);
+    expect(sendButton.textContent).toBe('Send text to yourself');
   });
 
   it('displays install command on step 1 and verifies helper installation', async () => {
